@@ -1,0 +1,25 @@
+2023-01-15 12:52:15.513384193 CET
+
+[example/ex.airda]
+Program
+••Variable declaration
+    Id: var
+    Type Id: Int
+••Variable assignment
+    Id: var
+    Expr
+      Numeric literal: 1
+••Variable initialization
+    Id: copy
+    Type Id: Num
+    Expr
+      Id: var
+
+[example/ex2.airda]
+Program
+••Variable initialization
+    Id: variableEx2Airda
+    Type Id: Int
+    Expr
+      Numeric literal: 1
+

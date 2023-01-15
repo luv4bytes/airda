@@ -1,0 +1,3 @@
+var : Int;
+var = 1;
+copy : Num = var;

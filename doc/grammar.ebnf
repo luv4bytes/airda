@@ -1,0 +1,37 @@
+program = statement, {statement};
+
+statement = variableDeclaration
+            | variableDeclarationInit;
+
+variableAssignment = identifier, assignment, expression;
+
+variableDeclarationInit = identifier, typeSpecifier, typeIdentifier, assignment, expression, endOfStatment;
+
+assignment = "=";
+
+expression = identifier
+             | numericConstant;
+
+variableDeclaration = identifier, typeSpecifier, typeIdentifier, endOfStatment;
+
+endOfStatment = ";";
+
+typeSpecifier = ":";
+
+typeIdentifier = identifier;
+
+identifier = unicodeChar, {(digit | unicodeChar | "_")};
+
+unicodeChar = ? unicode character ?;
+
+numericConstant = integer | decimal;
+
+integer = (["-"], digitNoNull, {digit}) | "0";
+
+decimal = (["-"], {digit}, ".", digit, {digit}) | {digit};
+
+digit = "0" | "1" | "2" | "3" | "4" 
+            | "5" | "6" | "7" | "8" | "9";
+
+digitNoNull = "1" | "2" | "3" | "4" 
+                  | "5" | "6" | "7" | "8" | "9";
