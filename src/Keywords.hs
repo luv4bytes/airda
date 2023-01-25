@@ -22,24 +22,33 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 --}
 
-module Help where
+-- | Contains language keywords.
+module Keywords where
 
-import Control.Monad ()
-import GHC.IO.Device (IODevice (isTerminal))
-import GHC.IO.FD (stdout)
-import System.Exit (exitFailure)
-import Text.Printf (printf)
+-- | Defines the keyword for declaring modules.
+moduleDecl :: String
+moduleDecl = "Mod"
 
--- | Prints the help for airda.
-printHelp :: IO ()
-printHelp = do
-  isTerm <- isTerminal stdout
-  if isTerm
-    then printTerminalHelp
-    else printNormalHelp
-  where
-    printTerminalHelp :: IO ()
-    printTerminalHelp = return ()
-    -- TODO:
-    printNormalHelp :: IO ()
-    printNormalHelp = return ()
+-- | Defines the keyword for the 'Num' (Numeric) type.
+typeNumeric :: String
+typeNumeric = "Num"
+
+-- | Defines the keyword for the 'Int' (Integer) type.
+typeInteger :: String
+typeInteger = "Int"
+
+-- | Defines the keyword for the 'Dec' (Decimal) type.
+typeDecimal :: String
+typeDecimal = "Dec"
+
+-- | Assignment operator.
+assignment :: Char
+assignment = '='
+
+-- | Type specifier.
+typeSpecifier :: Char
+typeSpecifier = ':'
+
+-- | End of a statement.
+endOfStatement :: Char
+endOfStatement = ';'

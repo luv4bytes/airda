@@ -22,24 +22,38 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 --}
 
-module Help where
+-- | LexerTypes contains types used during lexical analysis.
+module LexerTypes where
 
-import Control.Monad ()
-import GHC.IO.Device (IODevice (isTerminal))
-import GHC.IO.FD (stdout)
-import System.Exit (exitFailure)
-import Text.Printf (printf)
+-- | Defines different types of tokens found during lexical analysis.
+data TokenType
+  = -- | Identifier such as variables, functions, types etc.
+    Identifier
+  | -- | Module declaration keyword.
+    Module
+  | -- | Type specifier token.
+    TypeSpecifier
+  | -- | Assignment operator.
+    Assignment
+  | -- | Numeric value.
+    Numeric
+  | -- | Minus sign.
+    Minus
+  | -- | End of statement token.
+    EndOfStatement
+  | -- | Unknown token.
+    Unknown
+  deriving (Show, Eq)
 
--- | Prints the help for airda.
-printHelp :: IO ()
-printHelp = do
-  isTerm <- isTerminal stdout
-  if isTerm
-    then printTerminalHelp
-    else printNormalHelp
-  where
-    printTerminalHelp :: IO ()
-    printTerminalHelp = return ()
-    -- TODO:
-    printNormalHelp :: IO ()
-    printNormalHelp = return ()
+-- | Defines a token found during lexical analysis.
+data Token = Token
+  { tokenType :: TokenType,
+    tokenValue :: String,
+    tokenLineNum :: Int,
+    tokenColumn :: Int,
+    fileName :: String
+  }
+  deriving (Show, Eq)
+
+-- | List of tokens.
+type TokenList = [Token]

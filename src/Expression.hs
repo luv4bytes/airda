@@ -22,24 +22,33 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 --}
 
-module Help where
+-- | Defines functions for parsing expressions.
+module Expression where
 
-import Control.Monad ()
-import GHC.IO.Device (IODevice (isTerminal))
-import GHC.IO.FD (stdout)
-import System.Exit (exitFailure)
-import Text.Printf (printf)
+import qualified Error as ER
+import qualified LexerTypes as LT
+import qualified ParserTypes as PT
 
--- | Prints the help for airda.
-printHelp :: IO ()
-printHelp = do
-  isTerm <- isTerminal stdout
-  if isTerm
-    then printTerminalHelp
-    else printNormalHelp
-  where
-    printTerminalHelp :: IO ()
-    printTerminalHelp = return ()
-    -- TODO:
-    printNormalHelp :: IO ()
-    printNormalHelp = return ()
+expression :: PT.ParserState -> Either ER.ParserException (PT.TreeNode, PT.ParserState)
+expression [] = Left (ER.ParserExceptionSimple "Expected expression.")
+expression (t : ts)
+  | LT.tokenType t == LT.Numeric =
+      Right
+        ( PT.NumericLiteralNode (LT.tokenValue t),
+          ts
+        )
+  | LT.tokenType t == LT.Identifier =
+      Right
+        ( PT.IdentifierNode (LT.tokenValue t),
+          ts
+        )
+  | otherwise =
+      Left
+        ( ER.ParserException
+            { ER.pexMessage = "Invalid expression '" ++ LT.tokenValue t ++ "'.",
+              ER.pexErrCode = ER.errInvalidExpression,
+              ER.pexLineNum = Just (LT.tokenLineNum t),
+              ER.pexColNum = Just (LT.tokenColumn t),
+              ER.pexFileName = LT.fileName t
+            }
+        )

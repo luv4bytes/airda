@@ -22,24 +22,31 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 --}
 
-module Help where
+-- | Error contains functions for parser error messages and handling.
+module Error where
 
-import Control.Monad ()
-import GHC.IO.Device (IODevice (isTerminal))
-import GHC.IO.FD (stdout)
-import System.Exit (exitFailure)
-import Text.Printf (printf)
+errNoInput :: Int
+errNoInput = 0
 
--- | Prints the help for airda.
-printHelp :: IO ()
-printHelp = do
-  isTerm <- isTerminal stdout
-  if isTerm
-    then printTerminalHelp
-    else printNormalHelp
-  where
-    printTerminalHelp :: IO ()
-    printTerminalHelp = return ()
-    -- TODO:
-    printNormalHelp :: IO ()
-    printNormalHelp = return ()
+errInvalidToken :: Int
+errInvalidToken = 1
+
+errExpectedDifferentToken :: Int
+errExpectedDifferentToken = 2
+
+errInvalidExpression :: Int
+errInvalidExpression = 3
+
+-- | Defines a generic exception during parsing.
+data ParserException
+  = ParserException
+      { pexMessage :: String,
+        pexErrCode :: Int,
+        pexLineNum :: Maybe Int,
+        pexColNum :: Maybe Int,
+        pexFileName :: String
+      }
+  | ParserExceptionSimple
+      { pexMessage :: String
+      }
+  deriving (Show, Eq)
