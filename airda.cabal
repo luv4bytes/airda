@@ -7,7 +7,7 @@ build-type:         Simple
 synopsis: The Airda programming language.
 
 -- A longer description of the package.
--- description:
+description: Airda is a simple interpreted procedural programming language.
 
 -- The license under which the package is released.
 license:            MIT
@@ -35,7 +35,7 @@ executable airda
     hs-source-dirs:   app, src
     default-language: Haskell2010
 
-library
+library libairda
     exposed-modules:  Lexer, LexerTypes, Parser, ParserTypes, Error, Expression, Keywords
 
     -- Modules included in this library but not exported.
