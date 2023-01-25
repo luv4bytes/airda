@@ -28,10 +28,21 @@ tokenizeLine fileName line lineNum = tokenizeLine' lineNum 1 [] line []
       where
         -- \| Extracts the next identifier from the given line.
         getIdentifier :: [Char] -> Int -> Int -> String -> LT.TokenList -> LT.TokenList
-        getIdentifier stack lineNum colNum [] tokens = tokens ++ [LT.Token LT.Identifier stack lineNum (colNum - length stack + 1) fileName]
+        getIdentifier stack lineNum colNum [] tokens
+          | stack == K.moduleDecl = tokens ++ [LT.Token LT.Module stack lineNum (colNum - length stack + 1) fileName]
+          | otherwise = tokens ++ [LT.Token LT.Identifier stack lineNum (colNum - length stack + 1) fileName]
         getIdentifier stack lineNum colNum (x : xs) tokens
           | isAlpha x || isDigit x || x == '_' = getIdentifier (stack ++ [x]) lineNum (colNum + 1) xs tokens
-          | otherwise = tokenizeLine' lineNum (colNum + 1) [] (x : xs) (tokens ++ [LT.Token LT.Identifier stack lineNum (colNum - length stack + 1) fileName])
+          | otherwise =
+              tokenizeLine'
+                lineNum
+                (colNum + 1)
+                []
+                (x : xs)
+                ( if stack == K.moduleDecl
+                    then tokens ++ [LT.Token LT.Module stack lineNum (colNum - length stack + 1) fileName]
+                    else tokens ++ [LT.Token LT.Identifier stack lineNum (colNum - length stack + 1) fileName]
+                )
 
         -- \| Extracts the next numeric from the given line.
         getNumeric :: [Char] -> Int -> Int -> String -> LT.TokenList -> LT.TokenList

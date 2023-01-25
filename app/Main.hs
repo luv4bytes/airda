@@ -18,8 +18,6 @@ import Text.Printf (printf)
 
 main :: IO ()
 main = do
-  start <- getCPUTime
-
   args <- getArgs
   let parsedArgs = A.parseArgs args
 
@@ -67,11 +65,6 @@ main = do
                 showTrees ts
         showTrees (_ : ts) = showTrees ts
 
-  end <- getCPUTime
-
-  let diff = fromIntegral (end - start) / (10 ^ 12)
-  printf "Compilation took %0.3f sec.\n" (diff :: Double)
-
 readFileTokens :: String -> IO LT.TokenList
 readFileTokens fileName =
   do
@@ -96,7 +89,6 @@ parseFiles files = parseFiles' files [] 1
     parseFiles' (f : fs) nodes index =
       do
         tokens <- readFileTokens f
-        putStrLn ("[" ++ show index ++ " of " ++ show (length files) ++ "]  Compiling " ++ f ++ "...")
         case P.parseTokens tokens f of
           Left pe -> return (Left pe)
           Right tn -> parseFiles' fs (nodes ++ [tn]) (index + 1)

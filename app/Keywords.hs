@@ -1,6 +1,10 @@
 -- | Contains language keywords.
 module Keywords where
 
+-- | Defines the keyword for declaring modules.
+moduleDecl :: String
+moduleDecl = "Mod"
+
 -- | Defines the keyword for the 'Num' (Numeric) type.
 typeNumeric :: String
 typeNumeric = "Num"

@@ -1,5 +1,7 @@
 program = statement, {statement};
 
+moduleDeclaration = "Mod", identifier;
+
 statement = variableDeclaration
             | variableDeclarationInit;
 

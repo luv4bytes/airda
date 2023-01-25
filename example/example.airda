@@ -1,0 +1,4 @@
+Mod Example;
+
+a : Num = 1;
+a = 2.0;

@@ -5,6 +5,8 @@ module LexerTypes where
 data TokenType
   = -- | Identifier such as variables, functions, types etc.
     Identifier
+  | -- | Module declaration keyword.
+    Module
   | -- | Type specifier token.
     TypeSpecifier
   | -- | Assignment operator.

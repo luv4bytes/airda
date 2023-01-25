@@ -37,6 +37,10 @@ parseTokens tokens fileName =
             )
     statements tokens@(t : tt : ts) nodes
       | LT.tokenType t == LT.EndOfStatement = statements ts nodes
+      | LT.tokenType t == LT.Module =
+          case moduleDeclaration tokens of
+            Left ex -> Left ex
+            Right (assignment, pstate) -> statements pstate (nodes ++ [assignment])
       | LT.tokenType t == LT.Identifier && LT.tokenType tt == LT.TypeSpecifier =
           case variableDeclaration tokens of
             Left ex -> Left ex
@@ -53,6 +57,29 @@ parseTokens tokens fileName =
                 (Just (LT.tokenLineNum t))
                 (Just (LT.tokenColumn t))
                 (LT.fileName t)
+            )
+
+    moduleDeclaration :: PT.ParserState -> Either ER.ParserException (PT.TreeNode, PT.ParserState)
+    moduleDeclaration [] = Left (ER.ParserExceptionSimple "Expected module declaration.")
+    moduleDeclaration (t : ts)
+      | LT.tokenType t == LT.Module =
+          case identifier ts of
+            Left pe -> Left pe
+            Right (idNode, pstate) ->
+              case endOfStatement pstate of
+                Left pe -> Left pe
+                Right tos ->
+                  endOfStatement pstate >>= \pstate ->
+                    Right (PT.ModuleDeclNode idNode, pstate)
+      | otherwise =
+          Left
+            ( ER.ParserException
+                { ER.pexMessage = "Invalid token '" ++ LT.tokenValue t ++ "'. Expected module declaration.",
+                  ER.pexErrCode = ER.errInvalidToken,
+                  ER.pexLineNum = Just (LT.tokenLineNum t),
+                  ER.pexColNum = Just (LT.tokenColumn t),
+                  ER.pexFileName = LT.fileName t
+                }
             )
 
     variableAssignment :: PT.ParserState -> Either ER.ParserException (PT.TreeNode, PT.ParserState)
@@ -133,6 +160,21 @@ parseTokens tokens fileName =
                 }
             )
 
+    identifier :: PT.ParserState -> Either ER.ParserException (PT.TreeNode, PT.ParserState)
+    identifier [] = Left (ER.ParserExceptionSimple "Expected identifier.")
+    identifier (t : ts)
+      | LT.tokenType t == LT.Identifier = Right (PT.IdentifierNode (LT.tokenValue t), ts)
+      | otherwise =
+          Left
+            ( ER.ParserException
+                { ER.pexMessage = "Invalid token '" ++ LT.tokenValue t ++ "'. Expected identifier.",
+                  ER.pexErrCode = ER.errInvalidToken,
+                  ER.pexLineNum = Just (LT.tokenLineNum t),
+                  ER.pexColNum = Just (LT.tokenColumn t),
+                  ER.pexFileName = LT.fileName t
+                }
+            )
+
     typeIdentifier :: PT.ParserState -> Either ER.ParserException (PT.TreeNode, PT.ParserState)
     typeIdentifier [] = Left (ER.ParserExceptionSimple "Expected type identifier.")
     typeIdentifier (t : ts)
@@ -181,13 +223,17 @@ parseTokens tokens fileName =
 -- | Returns a string representation of a parse tree.
 treeRepr :: PT.TreeNode -> String
 treeRepr (PT.TreeRoot nodes fileName) =
-  "[" ++ fileName ++ "]\nProgram\n" ++ treeRepr' nodes 2 ++ "\n"
+  "[" ++ fileName ++ "]\n" ++ treeRepr' nodes 2 ++ "\n"
   where
     treeRepr' :: PT.NodeList -> Int -> String
     treeRepr' [] _ = ""
     treeRepr' (x : xs) level = treeRepr'' x level ++ treeRepr' xs level
       where
         treeRepr'' :: PT.TreeNode -> Int -> String
+        treeRepr'' (PT.ModuleDeclNode id) level =
+          replicate level '•'
+            ++ "Module declaration\n"
+            ++ treeRepr'' id (level + 2)
         treeRepr'' (PT.IdentifierNode value) level =
           replicate level ' '
             ++ "Id: "

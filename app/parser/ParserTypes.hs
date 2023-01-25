@@ -12,6 +12,10 @@ data TreeNode
       { nodes :: [TreeNode],
         fileName :: String
       }
+  | -- | Defines a module declaration node.
+    ModuleDeclNode
+      { modId :: TreeNode
+      }
   | -- | Defines a variable declaration node in the parse tree.
     VariableDeclNode
       { ident :: TreeNode,
