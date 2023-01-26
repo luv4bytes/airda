@@ -36,7 +36,8 @@ library libairda
                       Error, 
                       Expression, 
                       UnaryExpression, 
-                      ValueExpression, 
+                      ValueExpression,
+                      Operators,
                       Keywords
 
     -- Modules included in this library but not exported.
