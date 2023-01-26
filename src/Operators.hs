@@ -25,21 +25,21 @@ SOFTWARE.
 module Operators where
 
 -- | Defines the plus (+) operator.
-plus :: String
-plus = "+"
+plus :: Char
+plus = '+'
 
 -- | Defines the divide (/) operator.
-divide :: String
-divide = "/"
+divide :: Char
+divide = '/'
 
 -- | Defines the multiply (*) operator.
-multiply :: String
-multiply = "*"
+multiply :: Char
+multiply = '*'
 
 -- | Defines the minus (-) operator.
-minus :: String
-minus = "-"
+minus :: Char
+minus = '-'
 
 -- | Defines the power (^) operator.
-pow :: String
-pow = "^"
+pow :: Char
+pow = '^'

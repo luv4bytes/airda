@@ -28,6 +28,7 @@ module Lexer where
 import Data.Char (isAlpha, isAlphaNum, isDigit, isSpace)
 import qualified Keywords as K
 import qualified LexerTypes as LT
+import qualified Operators as O
 
 -- | Splits the given line into a list of tokens.
 tokenizeLine :: String -> String -> Int -> LT.TokenList
@@ -40,10 +41,11 @@ tokenizeLine fileName line lineNum = tokenizeLine' lineNum 1 [] line []
           getIdentifier (stack ++ [x]) lineNum colNum xs tokens
       | isDigit x = getNumeric (stack ++ [x]) lineNum colNum xs tokens
       | x == '#' = tokenizeLine' lineNum (colNum + 1) stack [] tokens -- Comment. Whole line is not analyzed.
-      | x == '-' = tokenizeLine' lineNum (colNum + 1) [] xs (tokens ++ [LT.Token LT.Minus [x] lineNum colNum fileName])
-      | x == '+' = tokenizeLine' lineNum (colNum + 1) [] xs (tokens ++ [LT.Token LT.Plus [x] lineNum colNum fileName])
-      | x == '/' = tokenizeLine' lineNum (colNum + 1) [] xs (tokens ++ [LT.Token LT.Divide [x] lineNum colNum fileName])
-      | x == '*' = tokenizeLine' lineNum (colNum + 1) [] xs (tokens ++ [LT.Token LT.Multiply [x] lineNum colNum fileName])
+      | x == O.minus = tokenizeLine' lineNum (colNum + 1) [] xs (tokens ++ [LT.Token LT.Minus [x] lineNum colNum fileName])
+      | x == O.plus = tokenizeLine' lineNum (colNum + 1) [] xs (tokens ++ [LT.Token LT.Plus [x] lineNum colNum fileName])
+      | x == O.divide = tokenizeLine' lineNum (colNum + 1) [] xs (tokens ++ [LT.Token LT.Divide [x] lineNum colNum fileName])
+      | x == O.multiply = tokenizeLine' lineNum (colNum + 1) [] xs (tokens ++ [LT.Token LT.Multiply [x] lineNum colNum fileName])
+      | x == O.pow = tokenizeLine' lineNum (colNum + 1) [] xs (tokens ++ [LT.Token LT.Power [x] lineNum colNum fileName])
       | x == K.assignment =
           tokenizeLine' lineNum (colNum + 1) [] xs (tokens ++ [LT.Token LT.Assignment [x] lineNum colNum fileName])
       | x == K.typeSpecifier =

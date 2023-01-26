@@ -45,6 +45,8 @@ data TokenType
     Divide
   | -- | Multiply sign.
     Multiply
+  | -- | Power (exponent) operator.
+    Power
   | -- | End of statement token.
     EndOfStatement
   | -- | Unknown token.
