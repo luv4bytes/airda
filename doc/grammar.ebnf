@@ -11,8 +11,9 @@ variableDeclarationInit = identifier, typeSpecifier, typeIdentifier, assignment,
 
 assignment = "=";
 
-expression = identifier
-             | numericConstant;
+expression = ["-"], (numericConstant | identifier);
+
+binaryOperator = "+" | "-" | "/" | "*";
 
 variableDeclaration = identifier, typeSpecifier, typeIdentifier, endOfStatment;
 

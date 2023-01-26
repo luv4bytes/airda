@@ -22,33 +22,24 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 --}
 
--- | Defines functions for parsing expressions.
-module Expression where
+module Operators where
 
-import qualified Error as ER
-import qualified LexerTypes as LT
-import qualified ParserTypes as PT
+-- | Defines the plus (+) operator.
+plus :: String
+plus = "+"
 
-expression :: PT.ParserState -> Either ER.ParserException (PT.TreeNode, PT.ParserState)
-expression [] = Left (ER.ParserExceptionSimple "Expected expression.")
-expression (t : ts)
-  | LT.tokenType t == LT.Numeric =
-      Right
-        ( PT.NumericLiteralNode (LT.tokenValue t),
-          ts
-        )
-  | LT.tokenType t == LT.Identifier =
-      Right
-        ( PT.IdentifierNode (LT.tokenValue t),
-          ts
-        )
-  | otherwise =
-      Left
-        ( ER.ParserException
-            { ER.pexMessage = "Invalid expression '" ++ LT.tokenValue t ++ "'.",
-              ER.pexErrCode = ER.errInvalidExpression,
-              ER.pexLineNum = Just (LT.tokenLineNum t),
-              ER.pexColNum = Just (LT.tokenColumn t),
-              ER.pexFileName = LT.fileName t
-            }
-        )
+-- | Defines the divide (/) operator.
+divide :: String
+divide = "/"
+
+-- | Defines the multiply (*) operator.
+multiply :: String
+multiply = "*"
+
+-- | Defines the minus (-) operator.
+minus :: String
+minus = "-"
+
+-- | Defines the power (^) operator.
+pow :: String
+pow = "^"

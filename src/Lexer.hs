@@ -41,6 +41,9 @@ tokenizeLine fileName line lineNum = tokenizeLine' lineNum 1 [] line []
       | isDigit x = getNumeric (stack ++ [x]) lineNum colNum xs tokens
       | x == '#' = tokenizeLine' lineNum (colNum + 1) stack [] tokens -- Comment. Whole line is not analyzed.
       | x == '-' = tokenizeLine' lineNum (colNum + 1) [] xs (tokens ++ [LT.Token LT.Minus [x] lineNum colNum fileName])
+      | x == '+' = tokenizeLine' lineNum (colNum + 1) [] xs (tokens ++ [LT.Token LT.Plus [x] lineNum colNum fileName])
+      | x == '/' = tokenizeLine' lineNum (colNum + 1) [] xs (tokens ++ [LT.Token LT.Divide [x] lineNum colNum fileName])
+      | x == '*' = tokenizeLine' lineNum (colNum + 1) [] xs (tokens ++ [LT.Token LT.Multiply [x] lineNum colNum fileName])
       | x == K.assignment =
           tokenizeLine' lineNum (colNum + 1) [] xs (tokens ++ [LT.Token LT.Assignment [x] lineNum colNum fileName])
       | x == K.typeSpecifier =
@@ -70,14 +73,14 @@ tokenizeLine fileName line lineNum = tokenizeLine' lineNum 1 [] line []
 
         -- \| Extracts the next numeric from the given line.
         getNumeric :: [Char] -> Int -> Int -> String -> LT.TokenList -> LT.TokenList
-        getNumeric stack lineNum colNum [] tokens = tokens ++ [LT.Token LT.Numeric stack lineNum (colNum - length stack + 1) fileName]
+        getNumeric stack lineNum colNum [] tokens = tokens ++ [LT.Token LT.NumericLiteral stack lineNum (colNum - length stack + 1) fileName]
         getNumeric stack lineNum colNum (x : xs) tokens
           | isDigit x = getNumeric (stack ++ [x]) lineNum (colNum + 1) xs tokens
           | x == '.' = getNumeric' (stack ++ [x]) lineNum (colNum + 1) xs tokens
-          | otherwise = tokenizeLine' lineNum (colNum + 1) [] (x : xs) (tokens ++ [LT.Token LT.Numeric stack lineNum (colNum - length stack + 1) fileName])
+          | otherwise = tokenizeLine' lineNum (colNum + 1) [] (x : xs) (tokens ++ [LT.Token LT.NumericLiteral stack lineNum (colNum - length stack + 1) fileName])
           where
             getNumeric' :: [Char] -> Int -> Int -> String -> LT.TokenList -> LT.TokenList
-            getNumeric' stack lineNum colNum [] tokens = tokens ++ [LT.Token LT.Numeric stack lineNum (colNum - length stack + 1) fileName]
+            getNumeric' stack lineNum colNum [] tokens = tokens ++ [LT.Token LT.NumericLiteral stack lineNum (colNum - length stack + 1) fileName]
             getNumeric' stack lineNum colNum (x : xs) tokens
               | isDigit x = getNumeric' (stack ++ [x]) lineNum (colNum + 1) xs tokens
-              | otherwise = tokenizeLine' lineNum (colNum + 1) [] (x : xs) (tokens ++ [LT.Token LT.Numeric stack lineNum (colNum - length stack + 1) fileName])
+              | otherwise = tokenizeLine' lineNum (colNum + 1) [] (x : xs) (tokens ++ [LT.Token LT.NumericLiteral stack lineNum (colNum - length stack + 1) fileName])

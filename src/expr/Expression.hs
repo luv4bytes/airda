@@ -22,21 +22,35 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 --}
 
--- | Contains language keywords.
-module Keywords where
+-- | Defines functions for parsing expressions.
+module Expression where
 
--- | Defines the keyword for declaring modules.
-moduleDecl :: String
-moduleDecl = "Mod"
+import qualified Error as ER
+import qualified LexerTypes as LT
+import qualified ParserTypes as PT
+import UnaryExpression (unaryExpression)
 
--- | Assignment operator.
-assignment :: Char
-assignment = '='
-
--- | Type specifier.
-typeSpecifier :: Char
-typeSpecifier = ':'
-
--- | End of a statement.
-endOfStatement :: Char
-endOfStatement = ';'
+expression :: PT.ParserState -> Either ER.ParserException (PT.TreeNode, PT.ParserState)
+expression [] = Left (ER.ParserExceptionSimple "Expected expression.")
+expression state@(t : ts)
+  | LT.tokenType t == LT.NumericLiteral =
+      Right
+        ( PT.NumericLiteralNode (LT.tokenValue t),
+          ts
+        )
+  | LT.tokenType t == LT.Minus = unaryExpression state
+  | LT.tokenType t == LT.Identifier =
+      Right
+        ( PT.IdentifierNode (LT.tokenValue t),
+          ts
+        )
+  | otherwise =
+      Left
+        ( ER.ParserException
+            { ER.pexMessage = "Invalid expression '" ++ LT.tokenValue t ++ "'.",
+              ER.pexErrCode = ER.errInvalidExpression,
+              ER.pexLineNum = Just (LT.tokenLineNum t),
+              ER.pexColNum = Just (LT.tokenColumn t),
+              ER.pexFileName = LT.fileName t
+            }
+        )

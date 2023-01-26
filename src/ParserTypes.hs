@@ -68,9 +68,17 @@ data TreeNode
     IdentifierNode
       { value :: String
       }
+  | UnaryOperatorNode
+      { value :: String
+      }
+  | UnaryExpressionNode
+      { operator :: TreeNode,
+        expression :: TreeNode
+      }
   deriving (Show, Eq)
 
 -- | Defines as a list of tree nodes.
 type NodeList = [TreeNode]
 
+-- | Defines the parser state.
 type ParserState = LT.TokenList

@@ -22,21 +22,16 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 --}
 
--- | Contains language keywords.
-module Keywords where
+module Primitives where
 
--- | Defines the keyword for declaring modules.
-moduleDecl :: String
-moduleDecl = "Mod"
+-- | Defines the keyword for the primitive 'Num' (Numeric) type.
+numeric :: String
+numeric = "Num"
 
--- | Assignment operator.
-assignment :: Char
-assignment = '='
+-- | Defines the keyword for the primitive 'Int' (Integer) type.
+integer :: String
+integer = "Int"
 
--- | Type specifier.
-typeSpecifier :: Char
-typeSpecifier = ':'
-
--- | End of a statement.
-endOfStatement :: Char
-endOfStatement = ';'
+-- | Defines the keyword for the primitive 'Dec' (Decimal) type.
+decimal :: String
+decimal = "Dec"

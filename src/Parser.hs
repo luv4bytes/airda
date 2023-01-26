@@ -268,6 +268,16 @@ treeRepr (PT.TreeRoot nodes fileName) =
             ++ "Type Id: "
             ++ value
             ++ "\n"
+        treeRepr'' (PT.UnaryExpressionNode op expr) level =
+          replicate level ' '
+            ++ "Unary expression\n"
+            ++ treeRepr'' op (level + 2)
+            ++ treeRepr'' expr (level + 2)
+        treeRepr'' (PT.UnaryOperatorNode value) level =
+          replicate level ' '
+            ++ "Operator: "
+            ++ value
+            ++ "\n"
         treeRepr'' (PT.NumericLiteralNode value) level =
           replicate level ' '
             ++ "Numeric literal: "
@@ -283,15 +293,11 @@ treeRepr (PT.TreeRoot nodes fileName) =
             ++ "Variable initialization\n"
             ++ treeRepr'' id (level + 2)
             ++ treeRepr'' typeId (level + 2)
-            ++ replicate (level + 2) ' '
-            ++ "Expr\n"
-            ++ treeRepr'' expr (level + 4)
+            ++ treeRepr'' expr (level + 2)
         treeRepr'' (PT.VariableAssignmentNode id expr) level =
           replicate level '•'
             ++ "Variable assignment\n"
             ++ treeRepr'' id (level + 2)
-            ++ replicate (level + 2) ' '
-            ++ "Expr\n"
-            ++ treeRepr'' expr (level + 4)
+            ++ treeRepr'' expr (level + 2)
         treeRepr'' _ _ = ""
 treeRepr _ = ""

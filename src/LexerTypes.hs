@@ -36,9 +36,15 @@ data TokenType
   | -- | Assignment operator.
     Assignment
   | -- | Numeric value.
-    Numeric
+    NumericLiteral
   | -- | Minus sign.
     Minus
+  | -- | Plus sign.
+    Plus
+  | -- | Divide sign.
+    Divide
+  | -- | Multiply sign.
+    Multiply
   | -- | End of statement token.
     EndOfStatement
   | -- | Unknown token.
