@@ -24,6 +24,7 @@ SOFTWARE.
 
 module Main where
 
+import qualified AST as Tree
 import qualified Args as A
 import Control.Monad (when)
 import Data.Maybe ()
@@ -33,7 +34,6 @@ import qualified Help as H
 import qualified Lexer as L
 import qualified LexerTypes as LT
 import qualified Parser as P
-import qualified ParserTypes as PT
 import System.CPUTime (getCPUTime)
 import System.Directory (doesFileExist, removeFile)
 import System.Environment (getArgs)
@@ -71,18 +71,18 @@ main = do
       where
         treeFile = A.parseTreeFile parsedArgs
 
-        writeTrees :: PT.NodeList -> IO ()
+        writeTrees :: Tree.NodeList -> IO ()
         writeTrees [] = return ()
-        writeTrees (root@(PT.TreeRoot nodes fileName) : ts) =
+        writeTrees (root@(Tree.Root nodes fileName) : ts) =
           let repr = P.treeRepr root
            in do
                 appendFile treeFile repr
                 writeTrees ts
         writeTrees (_ : ts) = writeTrees ts
 
-        showTrees :: PT.NodeList -> IO ()
+        showTrees :: Tree.NodeList -> IO ()
         showTrees [] = return ()
-        showTrees (root@(PT.TreeRoot nodes fileName) : ts) =
+        showTrees (root@(Tree.Root nodes fileName) : ts) =
           let repr = P.treeRepr root
            in do
                 putStr repr
@@ -105,10 +105,10 @@ readTokens fileName fileLines = readTokens' fileLines 1
     readTokens' (x : xs) lineNum =
       L.tokenizeLine fileName x lineNum ++ readTokens' xs (lineNum + 1)
 
-parseFiles :: [String] -> IO (Either E.ParserException PT.NodeList)
+parseFiles :: [String] -> IO (Either E.ParserException Tree.NodeList)
 parseFiles files = parseFiles' files [] 1
   where
-    parseFiles' :: [String] -> PT.NodeList -> Int -> IO (Either E.ParserException PT.NodeList)
+    parseFiles' :: [String] -> Tree.NodeList -> Int -> IO (Either E.ParserException Tree.NodeList)
     parseFiles' [] nodes _ = return (Right nodes)
     parseFiles' (f : fs) nodes index =
       do

@@ -25,32 +25,33 @@ SOFTWARE.
 -- | Defines functions for parsing expressions.
 module Expression where
 
-import qualified Error as ER
-import qualified LexerTypes as LT
-import qualified ParserTypes as PT
+import qualified AST
+import qualified Error
+import qualified LexerTypes
+import qualified ParserState
 import UnaryExpression (unaryExpression)
 
-expression :: PT.ParserState -> Either ER.ParserException (PT.TreeNode, PT.ParserState)
-expression [] = Left (ER.ParserExceptionSimple "Expected expression.")
+expression :: ParserState.ParserState -> Either Error.ParserException (AST.TreeNode, ParserState.ParserState)
+expression [] = Left (Error.ParserExceptionSimple "Expected expression.")
 expression state@(t : ts)
-  | LT.tokenType t == LT.NumericLiteral =
+  | LexerTypes.tokenType t == LexerTypes.NumericLiteral =
       Right
-        ( PT.NumericLiteralNode (LT.tokenValue t),
+        ( AST.NumericLiteral (LexerTypes.tokenValue t),
           ts
         )
-  | LT.tokenType t == LT.Minus = unaryExpression state
-  | LT.tokenType t == LT.Identifier =
+  | LexerTypes.tokenType t == LexerTypes.Minus = unaryExpression state
+  | LexerTypes.tokenType t == LexerTypes.Identifier =
       Right
-        ( PT.IdentifierNode (LT.tokenValue t),
+        ( AST.Identifier (LexerTypes.tokenValue t),
           ts
         )
   | otherwise =
       Left
-        ( ER.ParserException
-            { ER.pexMessage = "Invalid expression '" ++ LT.tokenValue t ++ "'.",
-              ER.pexErrCode = ER.errInvalidExpression,
-              ER.pexLineNum = Just (LT.tokenLineNum t),
-              ER.pexColNum = Just (LT.tokenColumn t),
-              ER.pexFileName = LT.fileName t
+        ( Error.ParserException
+            { Error.pexMessage = "Invalid expression '" ++ LexerTypes.tokenValue t ++ "'.",
+              Error.pexErrCode = Error.errInvalidExpression,
+              Error.pexLineNum = Just (LexerTypes.tokenLineNum t),
+              Error.pexColNum = Just (LexerTypes.tokenColumn t),
+              Error.pexFileName = LexerTypes.fileName t
             }
         )

@@ -25,28 +25,29 @@ SOFTWARE.
 -- | Defines functions for unary expressions.
 module UnaryExpression where
 
-import qualified Error as ER
-import qualified LexerTypes as LT
-import qualified ParserTypes as PT
+import qualified AST
+import qualified Error
+import qualified LexerTypes
+import qualified ParserState
 import ValueExpression (valueExpression)
 
 -- | Creates a unary expression.
-unaryExpression :: PT.ParserState -> Either ER.ParserException (PT.TreeNode, PT.ParserState)
-unaryExpression [] = Left (ER.ParserExceptionSimple "Expected expression.")
+unaryExpression :: ParserState.ParserState -> Either Error.ParserException (AST.TreeNode, ParserState.ParserState)
+unaryExpression [] = Left (Error.ParserExceptionSimple "Expected expression.")
 unaryExpression (t : ts)
-  | LT.tokenType t == LT.Minus =
+  | LexerTypes.tokenType t == LexerTypes.Minus =
       valueExpression ts >>= \(expr, state) ->
         Right
-          ( PT.UnaryExpressionNode (PT.UnaryOperatorNode (LT.tokenValue t)) expr,
+          ( AST.UnaryExpression (AST.UnaryOperator (LexerTypes.tokenValue t)) expr,
             state
           )
   | otherwise =
       Left
-        ( ER.ParserException
-            { ER.pexMessage = "Invalid expression '" ++ LT.tokenValue t ++ "'.",
-              ER.pexErrCode = ER.errInvalidExpression,
-              ER.pexLineNum = Just (LT.tokenLineNum t),
-              ER.pexColNum = Just (LT.tokenColumn t),
-              ER.pexFileName = LT.fileName t
+        ( Error.ParserException
+            { Error.pexMessage = "Invalid expression '" ++ LexerTypes.tokenValue t ++ "'.",
+              Error.pexErrCode = Error.errInvalidExpression,
+              Error.pexLineNum = Just (LexerTypes.tokenLineNum t),
+              Error.pexColNum = Just (LexerTypes.tokenColumn t),
+              Error.pexFileName = LexerTypes.fileName t
             }
         )

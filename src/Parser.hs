@@ -22,71 +22,75 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 --}
 
--- | Parser contains functions to parse tokens into a parse tree.
+-- | Parser contains functions to parse tokens into a parse AST.
 module Parser where
 
+import qualified AST
 import qualified Control.Monad
 import Data.Char (isAlpha, isAlphaNum, isDigit)
-import qualified Error as ER
-import qualified Expression as E
-import qualified LexerTypes as LT
-import qualified ParserTypes as PT
+import qualified Error
+import qualified Expression
+import qualified LexerTypes
+import qualified ParserState
+
+-- | Defines the parser state.
+type ParserState = LexerTypes.TokenList
 
 -- | Parses the given tokens into a list of tree nodes.
-parseTokens :: LT.TokenList -> String -> Either ER.ParserException PT.TreeNode
-parseTokens [] _ = Left (ER.ParserExceptionSimple "Nothing to parse :(")
+parseTokens :: LexerTypes.TokenList -> String -> Either Error.ParserException AST.TreeNode
+parseTokens [] _ = Left (Error.ParserExceptionSimple "Nothing to parse :(")
 parseTokens tokens fileName =
   case program tokens of
     Left pe -> Left pe
-    Right prog -> Right (PT.TreeRoot {PT.nodes = prog, PT.fileName = fileName})
+    Right prog -> Right (AST.Root {AST.nodes = prog, AST.fileName = fileName})
   where
     {-- The following functions represent parsing rules according to the Airda grammar. --}
 
-    program :: PT.ParserState -> Either ER.ParserException PT.NodeList
+    program :: ParserState.ParserState -> Either Error.ParserException AST.NodeList
     program tokens = statements tokens []
 
-    statements :: PT.ParserState -> PT.NodeList -> Either ER.ParserException PT.NodeList
+    statements :: ParserState.ParserState -> AST.NodeList -> Either Error.ParserException AST.NodeList
     statements [] nodes = Right nodes
     statements [t] nodes
-      | LT.tokenType t == LT.EndOfStatement = Right nodes
+      | LexerTypes.tokenType t == LexerTypes.EndOfStatement = Right nodes
       | otherwise =
           Left
-            ( ER.ParserException
-                { ER.pexMessage = "Invalid token '" ++ LT.tokenValue t ++ "'. Expected end of statement.",
-                  ER.pexErrCode = ER.errInvalidToken,
-                  ER.pexLineNum = Just (LT.tokenLineNum t),
-                  ER.pexColNum = Just (LT.tokenColumn t),
-                  ER.pexFileName = LT.fileName t
+            ( Error.ParserException
+                { Error.pexMessage = "Invalid token '" ++ LexerTypes.tokenValue t ++ "'. Expected end of statement.",
+                  Error.pexErrCode = Error.errInvalidToken,
+                  Error.pexLineNum = Just (LexerTypes.tokenLineNum t),
+                  Error.pexColNum = Just (LexerTypes.tokenColumn t),
+                  Error.pexFileName = LexerTypes.fileName t
                 }
             )
     statements tokens@(t : tt : ts) nodes
-      | LT.tokenType t == LT.EndOfStatement = statements ts nodes
-      | LT.tokenType t == LT.Module =
+      | LexerTypes.tokenType t == LexerTypes.EndOfStatement = statements ts nodes
+      | LexerTypes.tokenType t == LexerTypes.Module =
           case moduleDeclaration tokens of
             Left ex -> Left ex
             Right (assignment, pstate) -> statements pstate (nodes ++ [assignment])
-      | LT.tokenType t == LT.Identifier && LT.tokenType tt == LT.TypeSpecifier =
+      | LexerTypes.tokenType t == LexerTypes.Identifier && LexerTypes.tokenType tt == LexerTypes.TypeSpecifier =
           case variableDeclaration tokens of
             Left ex -> Left ex
             Right (varDecl, pstate) -> statements pstate (nodes ++ [varDecl])
-      | LT.tokenType t == LT.Identifier && LT.tokenType tt == LT.Assignment =
+      | LexerTypes.tokenType t == LexerTypes.Identifier && LexerTypes.tokenType tt == LexerTypes.Assignment =
           case variableAssignment tokens of
             Left ex -> Left ex
             Right (assignment, pstate) -> statements pstate (nodes ++ [assignment])
       | otherwise =
           Left
-            ( ER.ParserException
-                ("Invalid token '" ++ LT.tokenValue t ++ "'.")
-                ER.errInvalidToken
-                (Just (LT.tokenLineNum t))
-                (Just (LT.tokenColumn t))
-                (LT.fileName t)
+            ( Error.ParserException
+                ("Invalid token '" ++ LexerTypes.tokenValue t ++ "'.")
+                Error.errInvalidToken
+                (Just (LexerTypes.tokenLineNum t))
+                (Just (LexerTypes.tokenColumn t))
+                (LexerTypes.fileName t)
             )
 
-    moduleDeclaration :: PT.ParserState -> Either ER.ParserException (PT.TreeNode, PT.ParserState)
-    moduleDeclaration [] = Left (ER.ParserExceptionSimple "Expected module declaration.")
+    moduleDeclaration :: ParserState.ParserState -> Either Error.ParserException (AST.TreeNode, ParserState.ParserState)
+    moduleDeclaration [] = Left (Error.ParserExceptionSimple "Expected module declaration.")
     moduleDeclaration (t : ts)
-      | LT.tokenType t == LT.Module =
+      | LexerTypes.tokenType t == LexerTypes.Module =
           case identifier ts of
             Left pe -> Left pe
             Right (idNode, pstate) ->
@@ -94,30 +98,30 @@ parseTokens tokens fileName =
                 Left pe -> Left pe
                 Right tos ->
                   endOfStatement pstate >>= \pstate ->
-                    Right (PT.ModuleDeclNode idNode, pstate)
+                    Right (AST.ModuleDecl idNode, pstate)
       | otherwise =
           Left
-            ( ER.ParserException
-                { ER.pexMessage = "Invalid token '" ++ LT.tokenValue t ++ "'. Expected module declaration.",
-                  ER.pexErrCode = ER.errInvalidToken,
-                  ER.pexLineNum = Just (LT.tokenLineNum t),
-                  ER.pexColNum = Just (LT.tokenColumn t),
-                  ER.pexFileName = LT.fileName t
+            ( Error.ParserException
+                { Error.pexMessage = "Invalid token '" ++ LexerTypes.tokenValue t ++ "'. Expected module declaration.",
+                  Error.pexErrCode = Error.errInvalidToken,
+                  Error.pexLineNum = Just (LexerTypes.tokenLineNum t),
+                  Error.pexColNum = Just (LexerTypes.tokenColumn t),
+                  Error.pexFileName = LexerTypes.fileName t
                 }
             )
 
-    variableAssignment :: PT.ParserState -> Either ER.ParserException (PT.TreeNode, PT.ParserState)
-    variableAssignment [] = Left (ER.ParserExceptionSimple "Expected identifier.")
+    variableAssignment :: ParserState.ParserState -> Either Error.ParserException (AST.TreeNode, ParserState.ParserState)
+    variableAssignment [] = Left (Error.ParserExceptionSimple "Expected identifiError.")
     variableAssignment (t : ts)
-      | LT.tokenType t == LT.Identifier =
+      | LexerTypes.tokenType t == LexerTypes.Identifier =
           assignment ts
-            >>= ( E.expression
+            >>= ( Expression.expression
                     Control.Monad.>=> ( \(exprNode, pstate) ->
                                           endOfStatement pstate
                                             >>= \pstate ->
                                               Right
-                                                ( PT.VariableAssignmentNode
-                                                    (PT.IdentifierNode (LT.tokenValue t))
+                                                ( AST.VariableAssignment
+                                                    (AST.Identifier (LexerTypes.tokenValue t))
                                                     exprNode,
                                                   pstate
                                                 )
@@ -125,19 +129,19 @@ parseTokens tokens fileName =
                 )
       | otherwise =
           Left
-            ( ER.ParserException
-                { ER.pexMessage = "Invalid token '" ++ LT.tokenValue t ++ "'. Expected identifier.",
-                  ER.pexErrCode = ER.errInvalidToken,
-                  ER.pexLineNum = Just (LT.tokenLineNum t),
-                  ER.pexColNum = Just (LT.tokenColumn t),
-                  ER.pexFileName = LT.fileName t
+            ( Error.ParserException
+                { Error.pexMessage = "Invalid token '" ++ LexerTypes.tokenValue t ++ "'. Expected identifiError.",
+                  Error.pexErrCode = Error.errInvalidToken,
+                  Error.pexLineNum = Just (LexerTypes.tokenLineNum t),
+                  Error.pexColNum = Just (LexerTypes.tokenColumn t),
+                  Error.pexFileName = LexerTypes.fileName t
                 }
             )
 
-    variableDeclaration :: PT.ParserState -> Either ER.ParserException (PT.TreeNode, PT.ParserState)
-    variableDeclaration [] = Left (ER.ParserExceptionSimple "Expected identifier.")
+    variableDeclaration :: ParserState.ParserState -> Either Error.ParserException (AST.TreeNode, ParserState.ParserState)
+    variableDeclaration [] = Left (Error.ParserExceptionSimple "Expected identifiError.")
     variableDeclaration (t : ts)
-      | LT.tokenType t == LT.Identifier =
+      | LexerTypes.tokenType t == LexerTypes.Identifier =
           case typeSpecifier ts of
             Left pe -> Left pe
             Right pstate ->
@@ -149,152 +153,152 @@ parseTokens tokens fileName =
                       case endOfStatement pstate of
                         Left pe' -> Left pe'
                         Right pstate ->
-                          Right (PT.VariableDeclNode idNode typeIdNode, pstate)
+                          Right (AST.VariableDecl idNode typeIdNode, pstate)
                     Right pstate ->
-                      case E.expression pstate of
+                      case Expression.expression pstate of
                         Left pe -> Left pe
                         Right (exprNode, pstate) ->
                           endOfStatement pstate >>= \pstate ->
-                            Right (PT.VariableInitNode idNode typeIdNode exprNode, pstate)
+                            Right (AST.VariableInit idNode typeIdNode exprNode, pstate)
       | otherwise =
           Left
-            ( ER.ParserException
-                { ER.pexMessage = "Invalid token '" ++ LT.tokenValue t ++ "'. Expected identifier.",
-                  ER.pexErrCode = ER.errInvalidToken,
-                  ER.pexLineNum = Just (LT.tokenLineNum t),
-                  ER.pexColNum = Just (LT.tokenColumn t),
-                  ER.pexFileName = LT.fileName t
+            ( Error.ParserException
+                { Error.pexMessage = "Invalid token '" ++ LexerTypes.tokenValue t ++ "'. Expected identifiError.",
+                  Error.pexErrCode = Error.errInvalidToken,
+                  Error.pexLineNum = Just (LexerTypes.tokenLineNum t),
+                  Error.pexColNum = Just (LexerTypes.tokenColumn t),
+                  Error.pexFileName = LexerTypes.fileName t
                 }
             )
       where
-        idNode = PT.IdentifierNode (LT.tokenValue t)
+        idNode = AST.Identifier (LexerTypes.tokenValue t)
 
-    typeSpecifier :: PT.ParserState -> Either ER.ParserException PT.ParserState
-    typeSpecifier [] = Left (ER.ParserExceptionSimple "Expected type specifier.")
+    typeSpecifier :: ParserState.ParserState -> Either Error.ParserException ParserState.ParserState
+    typeSpecifier [] = Left (Error.ParserExceptionSimple "Expected type specifiError.")
     typeSpecifier (t : ts)
-      | LT.tokenType t == LT.TypeSpecifier = Right ts
+      | LexerTypes.tokenType t == LexerTypes.TypeSpecifier = Right ts
       | otherwise =
           Left
-            ( ER.ParserException
-                { ER.pexMessage = "Invalid token '" ++ LT.tokenValue t ++ "'. Expected type specifier.",
-                  ER.pexErrCode = ER.errInvalidToken,
-                  ER.pexLineNum = Just (LT.tokenLineNum t),
-                  ER.pexColNum = Just (LT.tokenColumn t),
-                  ER.pexFileName = LT.fileName t
+            ( Error.ParserException
+                { Error.pexMessage = "Invalid token '" ++ LexerTypes.tokenValue t ++ "'. Expected type specifiError.",
+                  Error.pexErrCode = Error.errInvalidToken,
+                  Error.pexLineNum = Just (LexerTypes.tokenLineNum t),
+                  Error.pexColNum = Just (LexerTypes.tokenColumn t),
+                  Error.pexFileName = LexerTypes.fileName t
                 }
             )
 
-    identifier :: PT.ParserState -> Either ER.ParserException (PT.TreeNode, PT.ParserState)
-    identifier [] = Left (ER.ParserExceptionSimple "Expected identifier.")
+    identifier :: ParserState.ParserState -> Either Error.ParserException (AST.TreeNode, ParserState.ParserState)
+    identifier [] = Left (Error.ParserExceptionSimple "Expected identifiError.")
     identifier (t : ts)
-      | LT.tokenType t == LT.Identifier = Right (PT.IdentifierNode (LT.tokenValue t), ts)
+      | LexerTypes.tokenType t == LexerTypes.Identifier = Right (AST.Identifier (LexerTypes.tokenValue t), ts)
       | otherwise =
           Left
-            ( ER.ParserException
-                { ER.pexMessage = "Invalid token '" ++ LT.tokenValue t ++ "'. Expected identifier.",
-                  ER.pexErrCode = ER.errInvalidToken,
-                  ER.pexLineNum = Just (LT.tokenLineNum t),
-                  ER.pexColNum = Just (LT.tokenColumn t),
-                  ER.pexFileName = LT.fileName t
+            ( Error.ParserException
+                { Error.pexMessage = "Invalid token '" ++ LexerTypes.tokenValue t ++ "'. Expected identifiError.",
+                  Error.pexErrCode = Error.errInvalidToken,
+                  Error.pexLineNum = Just (LexerTypes.tokenLineNum t),
+                  Error.pexColNum = Just (LexerTypes.tokenColumn t),
+                  Error.pexFileName = LexerTypes.fileName t
                 }
             )
 
-    typeIdentifier :: PT.ParserState -> Either ER.ParserException (PT.TreeNode, PT.ParserState)
-    typeIdentifier [] = Left (ER.ParserExceptionSimple "Expected type identifier.")
+    typeIdentifier :: ParserState.ParserState -> Either Error.ParserException (AST.TreeNode, ParserState.ParserState)
+    typeIdentifier [] = Left (Error.ParserExceptionSimple "Expected type identifiError.")
     typeIdentifier (t : ts)
-      | LT.tokenType t == LT.Identifier = Right (PT.TypeIdentifierNode (LT.tokenValue t), ts)
+      | LexerTypes.tokenType t == LexerTypes.Identifier = Right (AST.TypeIdentifier (LexerTypes.tokenValue t), ts)
       | otherwise =
           Left
-            ( ER.ParserException
-                { ER.pexMessage = "Invalid token '" ++ LT.tokenValue t ++ "'. Expected type identifier.",
-                  ER.pexErrCode = ER.errInvalidToken,
-                  ER.pexLineNum = Just (LT.tokenLineNum t),
-                  ER.pexColNum = Just (LT.tokenColumn t),
-                  ER.pexFileName = LT.fileName t
+            ( Error.ParserException
+                { Error.pexMessage = "Invalid token '" ++ LexerTypes.tokenValue t ++ "'. Expected type identifiError.",
+                  Error.pexErrCode = Error.errInvalidToken,
+                  Error.pexLineNum = Just (LexerTypes.tokenLineNum t),
+                  Error.pexColNum = Just (LexerTypes.tokenColumn t),
+                  Error.pexFileName = LexerTypes.fileName t
                 }
             )
 
-    assignment :: PT.ParserState -> Either ER.ParserException PT.ParserState
-    assignment [] = Left (ER.ParserExceptionSimple "Expected end of statement or initialization.")
+    assignment :: ParserState.ParserState -> Either Error.ParserException ParserState.ParserState
+    assignment [] = Left (Error.ParserExceptionSimple "Expected end of statement or initialization.")
     assignment (t : ts)
-      | LT.tokenType t == LT.Assignment = Right ts
+      | LexerTypes.tokenType t == LexerTypes.Assignment = Right ts
       | otherwise =
           Left
-            ( ER.ParserException
-                { ER.pexMessage = "Invalid token '" ++ LT.tokenValue t ++ "'. Expected end of statement.",
-                  ER.pexErrCode = ER.errInvalidToken,
-                  ER.pexLineNum = Just (LT.tokenLineNum t),
-                  ER.pexColNum = Just (LT.tokenColumn t),
-                  ER.pexFileName = LT.fileName t
+            ( Error.ParserException
+                { Error.pexMessage = "Invalid token '" ++ LexerTypes.tokenValue t ++ "'. Expected end of statement.",
+                  Error.pexErrCode = Error.errInvalidToken,
+                  Error.pexLineNum = Just (LexerTypes.tokenLineNum t),
+                  Error.pexColNum = Just (LexerTypes.tokenColumn t),
+                  Error.pexFileName = LexerTypes.fileName t
                 }
             )
 
-    endOfStatement :: PT.ParserState -> Either ER.ParserException PT.ParserState
-    endOfStatement [] = Left (ER.ParserExceptionSimple "Expected end of statement.")
+    endOfStatement :: ParserState.ParserState -> Either Error.ParserException ParserState.ParserState
+    endOfStatement [] = Left (Error.ParserExceptionSimple "Expected end of statement.")
     endOfStatement (t : ts)
-      | LT.tokenType t == LT.EndOfStatement = Right ts
+      | LexerTypes.tokenType t == LexerTypes.EndOfStatement = Right ts
       | otherwise =
           Left
-            ( ER.ParserException
-                { ER.pexMessage = "Invalid token '" ++ LT.tokenValue t ++ "'. Expected end of statement.",
-                  ER.pexErrCode = ER.errInvalidToken,
-                  ER.pexLineNum = Just (LT.tokenLineNum t),
-                  ER.pexColNum = Just (LT.tokenColumn t),
-                  ER.pexFileName = LT.fileName t
+            ( Error.ParserException
+                { Error.pexMessage = "Invalid token '" ++ LexerTypes.tokenValue t ++ "'. Expected end of statement.",
+                  Error.pexErrCode = Error.errInvalidToken,
+                  Error.pexLineNum = Just (LexerTypes.tokenLineNum t),
+                  Error.pexColNum = Just (LexerTypes.tokenColumn t),
+                  Error.pexFileName = LexerTypes.fileName t
                 }
             )
 
--- | Returns a string representation of a parse tree.
-treeRepr :: PT.TreeNode -> String
-treeRepr (PT.TreeRoot nodes fileName) =
+-- | Returns a string representation of a parse AST.
+treeRepr :: AST.TreeNode -> String
+treeRepr (AST.Root nodes fileName) =
   "[" ++ fileName ++ "]\n" ++ treeRepr' nodes 2 ++ "\n"
   where
-    treeRepr' :: PT.NodeList -> Int -> String
+    treeRepr' :: AST.NodeList -> Int -> String
     treeRepr' [] _ = ""
     treeRepr' (x : xs) level = treeRepr'' x level ++ treeRepr' xs level
       where
-        treeRepr'' :: PT.TreeNode -> Int -> String
-        treeRepr'' (PT.ModuleDeclNode id) level =
+        treeRepr'' :: AST.TreeNode -> Int -> String
+        treeRepr'' (AST.ModuleDecl id) level =
           replicate level '•'
             ++ "Module declaration\n"
             ++ treeRepr'' id (level + 2)
-        treeRepr'' (PT.IdentifierNode value) level =
+        treeRepr'' (AST.Identifier value) level =
           replicate level ' '
             ++ "Id: "
             ++ value
             ++ "\n"
-        treeRepr'' (PT.TypeIdentifierNode value) level =
+        treeRepr'' (AST.TypeIdentifier value) level =
           replicate level ' '
             ++ "Type Id: "
             ++ value
             ++ "\n"
-        treeRepr'' (PT.UnaryExpressionNode op expr) level =
+        treeRepr'' (AST.UnaryExpression op expr) level =
           replicate level ' '
             ++ "Unary expression\n"
             ++ treeRepr'' op (level + 2)
             ++ treeRepr'' expr (level + 2)
-        treeRepr'' (PT.UnaryOperatorNode value) level =
+        treeRepr'' (AST.UnaryOperator value) level =
           replicate level ' '
             ++ "Operator: "
             ++ value
             ++ "\n"
-        treeRepr'' (PT.NumericLiteralNode value) level =
+        treeRepr'' (AST.NumericLiteral value) level =
           replicate level ' '
             ++ "Numeric literal: "
             ++ value
             ++ "\n"
-        treeRepr'' (PT.VariableDeclNode id typeId) level =
+        treeRepr'' (AST.VariableDecl id typeId) level =
           replicate level '•'
             ++ "Variable declaration\n"
             ++ treeRepr'' id (level + 2)
             ++ treeRepr'' typeId (level + 2)
-        treeRepr'' (PT.VariableInitNode id typeId expr) level =
+        treeRepr'' (AST.VariableInit id typeId expr) level =
           replicate level '•'
             ++ "Variable initialization\n"
             ++ treeRepr'' id (level + 2)
             ++ treeRepr'' typeId (level + 2)
             ++ treeRepr'' expr (level + 2)
-        treeRepr'' (PT.VariableAssignmentNode id expr) level =
+        treeRepr'' (AST.VariableAssignment id expr) level =
           replicate level '•'
             ++ "Variable assignment\n"
             ++ treeRepr'' id (level + 2)
