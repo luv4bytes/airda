@@ -11,7 +11,7 @@ copies of the Software, and to permit persons to whom the Software is
 furnished to do so, subject to the following conditions:
 
 The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+copies or substantial portions of the SoftwarError.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -19,21 +19,20 @@ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
 AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+SOFTWARError.
 --}
 
 module Main where
 
-import qualified AST as Tree
-import qualified Args as A
+import qualified AST
+import qualified Args
 import Control.Monad (when)
 import Data.Maybe ()
 import Data.Time (getCurrentTime, getCurrentTimeZone, getZonedTime)
-import qualified Error as E
-import qualified Help as H
-import qualified Lexer as L
-import qualified LexerTypes as LT
-import qualified Parser as P
+import qualified Error
+import qualified Help
+import qualified Lexer
+import qualified Parser
 import System.CPUTime (getCPUTime)
 import System.Directory (doesFileExist, removeFile)
 import System.Environment (getArgs)
@@ -43,21 +42,21 @@ import Text.Printf (printf)
 main :: IO ()
 main = do
   args <- getArgs
-  let parsedArgs = A.parseArgs args
+  let parsedArgs = Args.parseArgs args
 
-  when (A.showHelp parsedArgs) (H.printHelp >> exitSuccess)
+  when (Args.showHelp parsedArgs) (Help.printHelp >> exitSuccess)
   when
-    (null (A.files parsedArgs))
-    (print "Please provide at least one file." >> exitFailure)
+    (null (Args.files parsedArgs))
+    (print "Please provide at least one filError." >> exitFailure)
 
-  parseTrees <- parseFiles (A.files parsedArgs)
+  parseTrees <- parseFiles (Args.files parsedArgs)
   case parseTrees of
     Left pe -> print pe
     Right trees ->
       do
         treeFileExists <- doesFileExist treeFile
         when
-          (A.writeParseTree parsedArgs)
+          (Args.writeParseTree parsedArgs)
           ( when
               treeFileExists
               (removeFile treeFile)
@@ -67,52 +66,52 @@ main = do
                      writeTrees trees
                  )
           )
-        when (A.showParseTree parsedArgs) (showTrees trees)
+        when (Args.showParseTree parsedArgs) (showTrees trees)
       where
-        treeFile = A.parseTreeFile parsedArgs
+        treeFile = Args.parseTreeFile parsedArgs
 
-        writeTrees :: Tree.NodeList -> IO ()
+        writeTrees :: AST.NodeList -> IO ()
         writeTrees [] = return ()
-        writeTrees (root@(Tree.Root nodes fileName) : ts) =
-          let repr = P.treeRepr root
+        writeTrees (root@(AST.Root nodes fileName) : ts) =
+          let repr = Parser.treeRepr root
            in do
                 appendFile treeFile repr
                 writeTrees ts
         writeTrees (_ : ts) = writeTrees ts
 
-        showTrees :: Tree.NodeList -> IO ()
+        showTrees :: AST.NodeList -> IO ()
         showTrees [] = return ()
-        showTrees (root@(Tree.Root nodes fileName) : ts) =
-          let repr = P.treeRepr root
+        showTrees (root@(AST.Root nodes fileName) : ts) =
+          let repr = Parser.treeRepr root
            in do
                 putStr repr
                 showTrees ts
         showTrees (_ : ts) = showTrees ts
 
-readFileTokens :: String -> IO LT.TokenList
+readFileTokens :: String -> IO Lexer.TokenList
 readFileTokens fileName =
   do
     fileContent <- readFile fileName
     let fileLines = lines fileContent
     return (readTokens fileName fileLines)
 
-readTokens :: String -> [String] -> LT.TokenList
+readTokens :: String -> [String] -> Lexer.TokenList
 readTokens _ [] = []
 readTokens fileName fileLines = readTokens' fileLines 1
   where
-    readTokens' :: [String] -> Int -> LT.TokenList
+    readTokens' :: [String] -> Int -> Lexer.TokenList
     readTokens' [] lineNum = []
     readTokens' (x : xs) lineNum =
-      L.tokenizeLine fileName x lineNum ++ readTokens' xs (lineNum + 1)
+      Lexer.tokenizeLine fileName x lineNum ++ readTokens' xs (lineNum + 1)
 
-parseFiles :: [String] -> IO (Either E.ParserException Tree.NodeList)
+parseFiles :: [String] -> IO (Either Error.ParserException AST.NodeList)
 parseFiles files = parseFiles' files [] 1
   where
-    parseFiles' :: [String] -> Tree.NodeList -> Int -> IO (Either E.ParserException Tree.NodeList)
+    parseFiles' :: [String] -> AST.NodeList -> Int -> IO (Either Error.ParserException AST.NodeList)
     parseFiles' [] nodes _ = return (Right nodes)
     parseFiles' (f : fs) nodes index =
       do
         tokens <- readFileTokens f
-        case P.parseTokens tokens f of
+        case Parser.parseTokens tokens f of
           Left pe -> return (Left pe)
           Right tn -> parseFiles' fs (nodes ++ [tn]) (index + 1)

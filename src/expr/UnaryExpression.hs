@@ -27,7 +27,7 @@ module UnaryExpression where
 
 import qualified AST
 import qualified Error
-import qualified LexerTypes
+import qualified Lexer
 import qualified ParserState
 import ValueExpression (valueExpression)
 
@@ -35,19 +35,19 @@ import ValueExpression (valueExpression)
 unaryExpression :: ParserState.ParserState -> Either Error.ParserException (AST.TreeNode, ParserState.ParserState)
 unaryExpression [] = Left (Error.ParserExceptionSimple "Expected expression.")
 unaryExpression (t : ts)
-  | LexerTypes.tokenType t == LexerTypes.Minus =
+  | Lexer.tokenType t == Lexer.Minus =
       valueExpression ts >>= \(expr, state) ->
         Right
-          ( AST.UnaryExpression (AST.UnaryOperator (LexerTypes.tokenValue t)) expr,
+          ( AST.UnaryExpression (AST.UnaryOperator (Lexer.tokenValue t)) expr,
             state
           )
   | otherwise =
       Left
         ( Error.ParserException
-            { Error.pexMessage = "Invalid expression '" ++ LexerTypes.tokenValue t ++ "'.",
+            { Error.pexMessage = "Invalid expression '" ++ Lexer.tokenValue t ++ "'.",
               Error.pexErrCode = Error.errInvalidExpression,
-              Error.pexLineNum = Just (LexerTypes.tokenLineNum t),
-              Error.pexColNum = Just (LexerTypes.tokenColumn t),
-              Error.pexFileName = LexerTypes.fileName t
+              Error.pexLineNum = Just (Lexer.tokenLineNum t),
+              Error.pexColNum = Just (Lexer.tokenColumn t),
+              Error.pexFileName = Lexer.fileName t
             }
         )

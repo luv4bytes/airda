@@ -26,29 +26,29 @@ module ValueExpression where
 
 import qualified AST
 import qualified Error
-import qualified LexerTypes
+import qualified Lexer
 import qualified ParserState
 
 valueExpression :: ParserState.ParserState -> Either Error.ParserException (AST.TreeNode, ParserState.ParserState)
 valueExpression [] = Left (Error.ParserExceptionSimple "Expected expression.")
 valueExpression (t : ts)
-  | LexerTypes.tokenType t == LexerTypes.NumericLiteral =
+  | Lexer.tokenType t == Lexer.NumericLiteral =
       Right
-        ( AST.NumericLiteral (LexerTypes.tokenValue t),
+        ( AST.NumericLiteral (Lexer.tokenValue t),
           ts
         )
-  | LexerTypes.tokenType t == LexerTypes.Identifier =
+  | Lexer.tokenType t == Lexer.Identifier =
       Right
-        ( AST.Identifier (LexerTypes.tokenValue t),
+        ( AST.Identifier (Lexer.tokenValue t),
           ts
         )
   | otherwise =
       Left
         ( Error.ParserException
-            { Error.pexMessage = "Invalid expression '" ++ LexerTypes.tokenValue t ++ "'.",
+            { Error.pexMessage = "Invalid expression '" ++ Lexer.tokenValue t ++ "'.",
               Error.pexErrCode = Error.errInvalidExpression,
-              Error.pexLineNum = Just (LexerTypes.tokenLineNum t),
-              Error.pexColNum = Just (LexerTypes.tokenColumn t),
-              Error.pexFileName = LexerTypes.fileName t
+              Error.pexLineNum = Just (Lexer.tokenLineNum t),
+              Error.pexColNum = Just (Lexer.tokenColumn t),
+              Error.pexFileName = Lexer.fileName t
             }
         )

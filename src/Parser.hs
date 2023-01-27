@@ -30,14 +30,14 @@ import qualified Control.Monad
 import Data.Char (isAlpha, isAlphaNum, isDigit)
 import qualified Error
 import qualified Expression
-import qualified LexerTypes
+import qualified Lexer
 import qualified ParserState
 
 -- | Defines the parser state.
-type ParserState = LexerTypes.TokenList
+type ParserState = Lexer.TokenList
 
 -- | Parses the given tokens into a list of tree nodes.
-parseTokens :: LexerTypes.TokenList -> String -> Either Error.ParserException AST.TreeNode
+parseTokens :: Lexer.TokenList -> String -> Either Error.ParserException AST.TreeNode
 parseTokens [] _ = Left (Error.ParserExceptionSimple "Nothing to parse :(")
 parseTokens tokens fileName =
   case program tokens of
@@ -52,45 +52,45 @@ parseTokens tokens fileName =
     statements :: ParserState.ParserState -> AST.NodeList -> Either Error.ParserException AST.NodeList
     statements [] nodes = Right nodes
     statements [t] nodes
-      | LexerTypes.tokenType t == LexerTypes.EndOfStatement = Right nodes
+      | Lexer.tokenType t == Lexer.EndOfStatement = Right nodes
       | otherwise =
           Left
             ( Error.ParserException
-                { Error.pexMessage = "Invalid token '" ++ LexerTypes.tokenValue t ++ "'. Expected end of statement.",
+                { Error.pexMessage = "Invalid token '" ++ Lexer.tokenValue t ++ "'. Expected end of statement.",
                   Error.pexErrCode = Error.errInvalidToken,
-                  Error.pexLineNum = Just (LexerTypes.tokenLineNum t),
-                  Error.pexColNum = Just (LexerTypes.tokenColumn t),
-                  Error.pexFileName = LexerTypes.fileName t
+                  Error.pexLineNum = Just (Lexer.tokenLineNum t),
+                  Error.pexColNum = Just (Lexer.tokenColumn t),
+                  Error.pexFileName = Lexer.fileName t
                 }
             )
     statements tokens@(t : tt : ts) nodes
-      | LexerTypes.tokenType t == LexerTypes.EndOfStatement = statements ts nodes
-      | LexerTypes.tokenType t == LexerTypes.Module =
+      | Lexer.tokenType t == Lexer.EndOfStatement = statements ts nodes
+      | Lexer.tokenType t == Lexer.Module =
           case moduleDeclaration tokens of
             Left ex -> Left ex
             Right (assignment, pstate) -> statements pstate (nodes ++ [assignment])
-      | LexerTypes.tokenType t == LexerTypes.Identifier && LexerTypes.tokenType tt == LexerTypes.TypeSpecifier =
+      | Lexer.tokenType t == Lexer.Identifier && Lexer.tokenType tt == Lexer.TypeSpecifier =
           case variableDeclaration tokens of
             Left ex -> Left ex
             Right (varDecl, pstate) -> statements pstate (nodes ++ [varDecl])
-      | LexerTypes.tokenType t == LexerTypes.Identifier && LexerTypes.tokenType tt == LexerTypes.Assignment =
+      | Lexer.tokenType t == Lexer.Identifier && Lexer.tokenType tt == Lexer.Assignment =
           case variableAssignment tokens of
             Left ex -> Left ex
             Right (assignment, pstate) -> statements pstate (nodes ++ [assignment])
       | otherwise =
           Left
             ( Error.ParserException
-                ("Invalid token '" ++ LexerTypes.tokenValue t ++ "'.")
+                ("Invalid token '" ++ Lexer.tokenValue t ++ "'.")
                 Error.errInvalidToken
-                (Just (LexerTypes.tokenLineNum t))
-                (Just (LexerTypes.tokenColumn t))
-                (LexerTypes.fileName t)
+                (Just (Lexer.tokenLineNum t))
+                (Just (Lexer.tokenColumn t))
+                (Lexer.fileName t)
             )
 
     moduleDeclaration :: ParserState.ParserState -> Either Error.ParserException (AST.TreeNode, ParserState.ParserState)
     moduleDeclaration [] = Left (Error.ParserExceptionSimple "Expected module declaration.")
     moduleDeclaration (t : ts)
-      | LexerTypes.tokenType t == LexerTypes.Module =
+      | Lexer.tokenType t == Lexer.Module =
           case identifier ts of
             Left pe -> Left pe
             Right (idNode, pstate) ->
@@ -102,18 +102,18 @@ parseTokens tokens fileName =
       | otherwise =
           Left
             ( Error.ParserException
-                { Error.pexMessage = "Invalid token '" ++ LexerTypes.tokenValue t ++ "'. Expected module declaration.",
+                { Error.pexMessage = "Invalid token '" ++ Lexer.tokenValue t ++ "'. Expected module declaration.",
                   Error.pexErrCode = Error.errInvalidToken,
-                  Error.pexLineNum = Just (LexerTypes.tokenLineNum t),
-                  Error.pexColNum = Just (LexerTypes.tokenColumn t),
-                  Error.pexFileName = LexerTypes.fileName t
+                  Error.pexLineNum = Just (Lexer.tokenLineNum t),
+                  Error.pexColNum = Just (Lexer.tokenColumn t),
+                  Error.pexFileName = Lexer.fileName t
                 }
             )
 
     variableAssignment :: ParserState.ParserState -> Either Error.ParserException (AST.TreeNode, ParserState.ParserState)
     variableAssignment [] = Left (Error.ParserExceptionSimple "Expected identifiError.")
     variableAssignment (t : ts)
-      | LexerTypes.tokenType t == LexerTypes.Identifier =
+      | Lexer.tokenType t == Lexer.Identifier =
           assignment ts
             >>= ( Expression.expression
                     Control.Monad.>=> ( \(exprNode, pstate) ->
@@ -121,7 +121,7 @@ parseTokens tokens fileName =
                                             >>= \pstate ->
                                               Right
                                                 ( AST.VariableAssignment
-                                                    (AST.Identifier (LexerTypes.tokenValue t))
+                                                    (AST.Identifier (Lexer.tokenValue t))
                                                     exprNode,
                                                   pstate
                                                 )
@@ -130,18 +130,18 @@ parseTokens tokens fileName =
       | otherwise =
           Left
             ( Error.ParserException
-                { Error.pexMessage = "Invalid token '" ++ LexerTypes.tokenValue t ++ "'. Expected identifiError.",
+                { Error.pexMessage = "Invalid token '" ++ Lexer.tokenValue t ++ "'. Expected identifiError.",
                   Error.pexErrCode = Error.errInvalidToken,
-                  Error.pexLineNum = Just (LexerTypes.tokenLineNum t),
-                  Error.pexColNum = Just (LexerTypes.tokenColumn t),
-                  Error.pexFileName = LexerTypes.fileName t
+                  Error.pexLineNum = Just (Lexer.tokenLineNum t),
+                  Error.pexColNum = Just (Lexer.tokenColumn t),
+                  Error.pexFileName = Lexer.fileName t
                 }
             )
 
     variableDeclaration :: ParserState.ParserState -> Either Error.ParserException (AST.TreeNode, ParserState.ParserState)
     variableDeclaration [] = Left (Error.ParserExceptionSimple "Expected identifiError.")
     variableDeclaration (t : ts)
-      | LexerTypes.tokenType t == LexerTypes.Identifier =
+      | Lexer.tokenType t == Lexer.Identifier =
           case typeSpecifier ts of
             Left pe -> Left pe
             Right pstate ->
@@ -163,88 +163,88 @@ parseTokens tokens fileName =
       | otherwise =
           Left
             ( Error.ParserException
-                { Error.pexMessage = "Invalid token '" ++ LexerTypes.tokenValue t ++ "'. Expected identifiError.",
+                { Error.pexMessage = "Invalid token '" ++ Lexer.tokenValue t ++ "'. Expected identifiError.",
                   Error.pexErrCode = Error.errInvalidToken,
-                  Error.pexLineNum = Just (LexerTypes.tokenLineNum t),
-                  Error.pexColNum = Just (LexerTypes.tokenColumn t),
-                  Error.pexFileName = LexerTypes.fileName t
+                  Error.pexLineNum = Just (Lexer.tokenLineNum t),
+                  Error.pexColNum = Just (Lexer.tokenColumn t),
+                  Error.pexFileName = Lexer.fileName t
                 }
             )
       where
-        idNode = AST.Identifier (LexerTypes.tokenValue t)
+        idNode = AST.Identifier (Lexer.tokenValue t)
 
     typeSpecifier :: ParserState.ParserState -> Either Error.ParserException ParserState.ParserState
     typeSpecifier [] = Left (Error.ParserExceptionSimple "Expected type specifiError.")
     typeSpecifier (t : ts)
-      | LexerTypes.tokenType t == LexerTypes.TypeSpecifier = Right ts
+      | Lexer.tokenType t == Lexer.TypeSpecifier = Right ts
       | otherwise =
           Left
             ( Error.ParserException
-                { Error.pexMessage = "Invalid token '" ++ LexerTypes.tokenValue t ++ "'. Expected type specifiError.",
+                { Error.pexMessage = "Invalid token '" ++ Lexer.tokenValue t ++ "'. Expected type specifiError.",
                   Error.pexErrCode = Error.errInvalidToken,
-                  Error.pexLineNum = Just (LexerTypes.tokenLineNum t),
-                  Error.pexColNum = Just (LexerTypes.tokenColumn t),
-                  Error.pexFileName = LexerTypes.fileName t
+                  Error.pexLineNum = Just (Lexer.tokenLineNum t),
+                  Error.pexColNum = Just (Lexer.tokenColumn t),
+                  Error.pexFileName = Lexer.fileName t
                 }
             )
 
     identifier :: ParserState.ParserState -> Either Error.ParserException (AST.TreeNode, ParserState.ParserState)
     identifier [] = Left (Error.ParserExceptionSimple "Expected identifiError.")
     identifier (t : ts)
-      | LexerTypes.tokenType t == LexerTypes.Identifier = Right (AST.Identifier (LexerTypes.tokenValue t), ts)
+      | Lexer.tokenType t == Lexer.Identifier = Right (AST.Identifier (Lexer.tokenValue t), ts)
       | otherwise =
           Left
             ( Error.ParserException
-                { Error.pexMessage = "Invalid token '" ++ LexerTypes.tokenValue t ++ "'. Expected identifiError.",
+                { Error.pexMessage = "Invalid token '" ++ Lexer.tokenValue t ++ "'. Expected identifiError.",
                   Error.pexErrCode = Error.errInvalidToken,
-                  Error.pexLineNum = Just (LexerTypes.tokenLineNum t),
-                  Error.pexColNum = Just (LexerTypes.tokenColumn t),
-                  Error.pexFileName = LexerTypes.fileName t
+                  Error.pexLineNum = Just (Lexer.tokenLineNum t),
+                  Error.pexColNum = Just (Lexer.tokenColumn t),
+                  Error.pexFileName = Lexer.fileName t
                 }
             )
 
     typeIdentifier :: ParserState.ParserState -> Either Error.ParserException (AST.TreeNode, ParserState.ParserState)
     typeIdentifier [] = Left (Error.ParserExceptionSimple "Expected type identifiError.")
     typeIdentifier (t : ts)
-      | LexerTypes.tokenType t == LexerTypes.Identifier = Right (AST.TypeIdentifier (LexerTypes.tokenValue t), ts)
+      | Lexer.tokenType t == Lexer.Identifier = Right (AST.TypeIdentifier (Lexer.tokenValue t), ts)
       | otherwise =
           Left
             ( Error.ParserException
-                { Error.pexMessage = "Invalid token '" ++ LexerTypes.tokenValue t ++ "'. Expected type identifiError.",
+                { Error.pexMessage = "Invalid token '" ++ Lexer.tokenValue t ++ "'. Expected type identifiError.",
                   Error.pexErrCode = Error.errInvalidToken,
-                  Error.pexLineNum = Just (LexerTypes.tokenLineNum t),
-                  Error.pexColNum = Just (LexerTypes.tokenColumn t),
-                  Error.pexFileName = LexerTypes.fileName t
+                  Error.pexLineNum = Just (Lexer.tokenLineNum t),
+                  Error.pexColNum = Just (Lexer.tokenColumn t),
+                  Error.pexFileName = Lexer.fileName t
                 }
             )
 
     assignment :: ParserState.ParserState -> Either Error.ParserException ParserState.ParserState
     assignment [] = Left (Error.ParserExceptionSimple "Expected end of statement or initialization.")
     assignment (t : ts)
-      | LexerTypes.tokenType t == LexerTypes.Assignment = Right ts
+      | Lexer.tokenType t == Lexer.Assignment = Right ts
       | otherwise =
           Left
             ( Error.ParserException
-                { Error.pexMessage = "Invalid token '" ++ LexerTypes.tokenValue t ++ "'. Expected end of statement.",
+                { Error.pexMessage = "Invalid token '" ++ Lexer.tokenValue t ++ "'. Expected end of statement.",
                   Error.pexErrCode = Error.errInvalidToken,
-                  Error.pexLineNum = Just (LexerTypes.tokenLineNum t),
-                  Error.pexColNum = Just (LexerTypes.tokenColumn t),
-                  Error.pexFileName = LexerTypes.fileName t
+                  Error.pexLineNum = Just (Lexer.tokenLineNum t),
+                  Error.pexColNum = Just (Lexer.tokenColumn t),
+                  Error.pexFileName = Lexer.fileName t
                 }
             )
 
     endOfStatement :: ParserState.ParserState -> Either Error.ParserException ParserState.ParserState
     endOfStatement [] = Left (Error.ParserExceptionSimple "Expected end of statement.")
     endOfStatement (t : ts)
-      | LexerTypes.tokenType t == LexerTypes.EndOfStatement = Right ts
+      | Lexer.tokenType t == Lexer.EndOfStatement = Right ts
       | otherwise =
           Left
             ( Error.ParserException
-                { Error.pexMessage = "Invalid token '" ++ LexerTypes.tokenValue t ++ "'. Expected end of statement.",
+                { Error.pexMessage = "Invalid token '" ++ Lexer.tokenValue t ++ "'. Expected end of statement.",
                   Error.pexErrCode = Error.errInvalidToken,
-                  Error.pexLineNum = Just (LexerTypes.tokenLineNum t),
-                  Error.pexColNum = Just (LexerTypes.tokenColumn t),
-                  Error.pexFileName = LexerTypes.fileName t
+                  Error.pexLineNum = Just (Lexer.tokenLineNum t),
+                  Error.pexColNum = Just (Lexer.tokenColumn t),
+                  Error.pexFileName = Lexer.fileName t
                 }
             )
 

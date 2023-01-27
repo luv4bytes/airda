@@ -27,39 +27,79 @@ module Lexer where
 
 import Data.Char (isAlpha, isAlphaNum, isDigit, isSpace)
 import qualified Keywords
-import qualified LexerTypes
 import qualified Operators
 
+-- | Defines different types of tokens found during lexical analysis.
+data TokenType
+  = -- | Identifier such as variables, functions, types etc.
+    Identifier
+  | -- | Module declaration keyword.
+    Module
+  | -- | Type specifier token.
+    TypeSpecifier
+  | -- | Assignment operator.
+    Assignment
+  | -- | Numeric value.
+    NumericLiteral
+  | -- | Minus sign.
+    Minus
+  | -- | Plus sign.
+    Plus
+  | -- | Divide sign.
+    Divide
+  | -- | Multiply sign.
+    Multiply
+  | -- | Power (exponent) operator.
+    Power
+  | -- | End of statement token.
+    EndOfStatement
+  | -- | Unknown token.
+    Unknown
+  deriving (Show, Eq)
+
+-- | Defines a token found during lexical analysis.
+data Token = Token
+  { tokenType :: TokenType,
+    tokenValue :: String,
+    tokenLineNum :: Int,
+    tokenColumn :: Int,
+    fileName :: String
+  }
+  deriving (Show, Eq)
+
+-- | List of tokens.
+type TokenList = [Token]
+
 -- | Splits the given line into a list of tokens.
-tokenizeLine :: String -> String -> Int -> LexerTypes.TokenList
+tokenizeLine :: String -> String -> Int -> TokenList
 tokenizeLine fileName line lineNum = tokenizeLine' lineNum 1 [] line []
   where
-    tokenizeLine' :: Int -> Int -> [Char] -> String -> LexerTypes.TokenList -> LexerTypes.TokenList
+    tokenizeLine' :: Int -> Int -> [Char] -> String -> TokenList -> TokenList
     tokenizeLine' lineNum colNum stack [] tokens = tokens
     tokenizeLine' lineNum colNum stack (x : xs) tokens
       | isAlpha x =
           getIdentifier (stack ++ [x]) lineNum colNum xs tokens
       | isDigit x = getNumeric (stack ++ [x]) lineNum colNum xs tokens
       | x == '#' = tokenizeLine' lineNum (colNum + 1) stack [] tokens -- Comment. Whole line is not analyzed.
-      | x == Operators.minus = tokenizeLine' lineNum (colNum + 1) [] xs (tokens ++ [LexerTypes.Token LexerTypes.Minus [x] lineNum colNum fileName])
-      | x == Operators.plus = tokenizeLine' lineNum (colNum + 1) [] xs (tokens ++ [LexerTypes.Token LexerTypes.Plus [x] lineNum colNum fileName])
-      | x == Operators.divide = tokenizeLine' lineNum (colNum + 1) [] xs (tokens ++ [LexerTypes.Token LexerTypes.Divide [x] lineNum colNum fileName])
-      | x == Operators.multiply = tokenizeLine' lineNum (colNum + 1) [] xs (tokens ++ [LexerTypes.Token LexerTypes.Multiply [x] lineNum colNum fileName])
-      | x == Operators.pow = tokenizeLine' lineNum (colNum + 1) [] xs (tokens ++ [LexerTypes.Token LexerTypes.Power [x] lineNum colNum fileName])
+      | x == Operators.minus = tokenizeLine' lineNum (colNum + 1) [] xs (tokens ++ [Token Minus [x] lineNum colNum fileName])
+      | x == Operators.plus = tokenizeLine' lineNum (colNum + 1) [] xs (tokens ++ [Token Plus [x] lineNum colNum fileName])
+      | x == Operators.divide = tokenizeLine' lineNum (colNum + 1) [] xs (tokens ++ [Token Divide [x] lineNum colNum fileName])
+      | x == Operators.multiply = tokenizeLine' lineNum (colNum + 1) [] xs (tokens ++ [Token Multiply [x] lineNum colNum fileName])
+      | x == Operators.pow = tokenizeLine' lineNum (colNum + 1) [] xs (tokens ++ [Token Power [x] lineNum colNum fileName])
       | x == Keywords.assignment =
-          tokenizeLine' lineNum (colNum + 1) [] xs (tokens ++ [LexerTypes.Token LexerTypes.Assignment [x] lineNum colNum fileName])
+          tokenizeLine' lineNum (colNum + 1) [] xs (tokens ++ [Token Assignment [x] lineNum colNum fileName])
       | x == Keywords.typeSpecifier =
-          tokenizeLine' lineNum (colNum + 1) [] xs (tokens ++ [LexerTypes.Token LexerTypes.TypeSpecifier [x] lineNum (colNum - length [x] + 1) fileName])
+          tokenizeLine' lineNum (colNum + 1) [] xs (tokens ++ [Token TypeSpecifier [x] lineNum (colNum - length [x] + 1) fileName])
       | x == Keywords.endOfStatement =
-          tokenizeLine' lineNum (colNum + 1) [] xs (tokens ++ [LexerTypes.Token LexerTypes.EndOfStatement [x] lineNum colNum fileName])
+          tokenizeLine' lineNum (colNum + 1) [] xs (tokens ++ [Token EndOfStatement [x] lineNum colNum fileName])
       | isSpace x = tokenizeLine' lineNum (colNum + 1) stack xs tokens
-      | otherwise = tokenizeLine' lineNum (colNum + 1) stack xs (tokens ++ [LexerTypes.Token LexerTypes.Unknown [x] lineNum colNum fileName])
+      | otherwise = tokenizeLine' lineNum (colNum + 1) stack xs (tokens ++ [Token Unknown [x] lineNum colNum fileName])
       where
         -- \| Extracts the next identifier from the given line.
-        getIdentifier :: [Char] -> Int -> Int -> String -> LexerTypes.TokenList -> LexerTypes.TokenList
+        getIdentifier :: [Char] -> Int -> Int -> String -> TokenList -> TokenList
         getIdentifier stack lineNum colNum [] tokens
-          | stack == Keywords.moduleDecl = tokens ++ [LexerTypes.Token LexerTypes.Module stack lineNum (colNum - length stack + 1) fileName]
-          | otherwise = tokens ++ [LexerTypes.Token LexerTypes.Identifier stack lineNum (colNum - length stack + 1) fileName]
+          | stack == Keywords.moduleDecl = tokens ++ [Token Module stack lineNum (colNum - length stack + 1) fileName]
+          | otherwise = tokens ++ [Token Identifier stack lineNum (colNum - length stack + 1) fileName]
         getIdentifier stack lineNum colNum (x : xs) tokens
           | isAlpha x || isDigit x || x == '_' = getIdentifier (stack ++ [x]) lineNum (colNum + 1) xs tokens
           | otherwise =
@@ -69,20 +109,20 @@ tokenizeLine fileName line lineNum = tokenizeLine' lineNum 1 [] line []
                 []
                 (x : xs)
                 ( if stack == Keywords.moduleDecl
-                    then tokens ++ [LexerTypes.Token LexerTypes.Module stack lineNum (colNum - length stack + 1) fileName]
-                    else tokens ++ [LexerTypes.Token LexerTypes.Identifier stack lineNum (colNum - length stack + 1) fileName]
+                    then tokens ++ [Token Module stack lineNum (colNum - length stack + 1) fileName]
+                    else tokens ++ [Token Identifier stack lineNum (colNum - length stack + 1) fileName]
                 )
 
         -- \| Extracts the next numeric from the given line.
-        getNumeric :: [Char] -> Int -> Int -> String -> LexerTypes.TokenList -> LexerTypes.TokenList
-        getNumeric stack lineNum colNum [] tokens = tokens ++ [LexerTypes.Token LexerTypes.NumericLiteral stack lineNum (colNum - length stack + 1) fileName]
+        getNumeric :: [Char] -> Int -> Int -> String -> TokenList -> TokenList
+        getNumeric stack lineNum colNum [] tokens = tokens ++ [Token NumericLiteral stack lineNum (colNum - length stack + 1) fileName]
         getNumeric stack lineNum colNum (x : xs) tokens
           | isDigit x = getNumeric (stack ++ [x]) lineNum (colNum + 1) xs tokens
           | x == '.' = getNumeric' (stack ++ [x]) lineNum (colNum + 1) xs tokens
-          | otherwise = tokenizeLine' lineNum (colNum + 1) [] (x : xs) (tokens ++ [LexerTypes.Token LexerTypes.NumericLiteral stack lineNum (colNum - length stack + 1) fileName])
+          | otherwise = tokenizeLine' lineNum (colNum + 1) [] (x : xs) (tokens ++ [Token NumericLiteral stack lineNum (colNum - length stack + 1) fileName])
           where
-            getNumeric' :: [Char] -> Int -> Int -> String -> LexerTypes.TokenList -> LexerTypes.TokenList
-            getNumeric' stack lineNum colNum [] tokens = tokens ++ [LexerTypes.Token LexerTypes.NumericLiteral stack lineNum (colNum - length stack + 1) fileName]
+            getNumeric' :: [Char] -> Int -> Int -> String -> TokenList -> TokenList
+            getNumeric' stack lineNum colNum [] tokens = tokens ++ [Token NumericLiteral stack lineNum (colNum - length stack + 1) fileName]
             getNumeric' stack lineNum colNum (x : xs) tokens
               | isDigit x = getNumeric' (stack ++ [x]) lineNum (colNum + 1) xs tokens
-              | otherwise = tokenizeLine' lineNum (colNum + 1) [] (x : xs) (tokens ++ [LexerTypes.Token LexerTypes.NumericLiteral stack lineNum (colNum - length stack + 1) fileName])
+              | otherwise = tokenizeLine' lineNum (colNum + 1) [] (x : xs) (tokens ++ [Token NumericLiteral stack lineNum (colNum - length stack + 1) fileName])

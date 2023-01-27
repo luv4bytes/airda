@@ -25,7 +25,7 @@ SOFTWARE.
 -- | Defines functions for the parser state.
 module ParserState where
 
-import qualified LexerTypes
+import qualified Lexer
 
 -- | Defines the parser state.
-type ParserState = LexerTypes.TokenList
+type ParserState = Lexer.TokenList
