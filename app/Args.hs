@@ -53,8 +53,8 @@ showHelpArg :: String
 showHelpArg = "--help"
 
 -- | Argument for following list of files to compile.
-compFilesArg :: String
-compFilesArg = "--files"
+filesArg :: String
+filesArg = "--files"
 
 -- | Parses the given arguments and returns parsed arguments or nothing.
 parseArgs :: [String] -> Arguments
@@ -70,7 +70,7 @@ parseArgs args = parseArgs' args (Arguments False False "" False [])
     parseArgs' (a : rest@(aa : as)) arg@(Arguments showParseTree writeParseTree parseTreeFile showHelp files)
       | a == showParseTreeArg = parseArgs' rest arg {showParseTree = True}
       | a == showHelpArg = parseArgs' rest arg {showHelp = True}
-      | a == compFilesArg = arg {files = rest}
+      | a == filesArg = arg {files = rest}
       | a == writeParseTreeArg =
           parseArgs' as arg {writeParseTree = True, parseTreeFile = aa}
       | otherwise = parseArgs' rest arg

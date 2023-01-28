@@ -53,6 +53,10 @@ data TokenType
     Power
   | -- | End of statement token.
     EndOfStatement
+  | -- | Open parenthesis.
+    OpenParen
+  | -- | Closed parenthesis.
+    ClosedParen
   | -- | Unknown token.
     Unknown
   deriving (Show, Eq)
@@ -92,6 +96,10 @@ tokenizeLine fileName line lineNum = tokenizeLine' lineNum 1 [] line []
           tokenizeLine' lineNum (colNum + 1) [] xs (tokens ++ [Token TypeSpecifier [x] lineNum (colNum - length [x] + 1) fileName])
       | x == Keywords.endOfStatement =
           tokenizeLine' lineNum (colNum + 1) [] xs (tokens ++ [Token EndOfStatement [x] lineNum colNum fileName])
+      | x == Keywords.openParen =
+          tokenizeLine' lineNum (colNum + 1) [] xs (tokens ++ [Token OpenParen [x] lineNum colNum fileName])
+      | x == Keywords.closedParen =
+          tokenizeLine' lineNum (colNum + 1) [] xs (tokens ++ [Token ClosedParen [x] lineNum colNum fileName])
       | isSpace x = tokenizeLine' lineNum (colNum + 1) stack xs tokens
       | otherwise = tokenizeLine' lineNum (colNum + 1) stack xs (tokens ++ [Token Unknown [x] lineNum colNum fileName])
       where

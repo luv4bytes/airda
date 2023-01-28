@@ -48,7 +48,7 @@ data TreeNode
         initValue :: TreeNode
       }
   | -- | Defines an assignment for a variable.
-    VariableAssignment
+    Assignment
       { variableName :: TreeNode,
         assignValue :: TreeNode
       }

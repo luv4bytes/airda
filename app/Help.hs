@@ -39,7 +39,23 @@ printHelp = do
     else printNormalHelp
   where
     printTerminalHelp :: IO ()
-    printTerminalHelp = return ()
-    -- TODO:
+    printTerminalHelp =
+      do
+        printf "\ESC[32;1mUsage\ESC[0m: airda [options] file...\n"
+        printf "Options:\n"
+        printf "%-2s\ESC[94;1m%-25s\ESC[0m%-40s\n" "" "--show-tree" "Prints the generated AST to stdout."
+        printf "%-2s\ESC[94;1m%-25s\ESC[0m%-40s\n" "" "--write-tree [file]" "Writes the generated AST to the given file."
+        printf "%-2s\ESC[94;1m%-25s\ESC[0m%-40s\n" "" "--help" "Prints this help text."
+        printf "%-2s\ESC[94;1m%-25s\ESC[0m%-40s\n" "" "--files {f1, ... fn}" "Specifies the files to interpret."
+        printf "\n"
+
     printNormalHelp :: IO ()
-    printNormalHelp = return ()
+    printNormalHelp =
+      do
+        printf "Usage: airda [options] file...\n"
+        printf "Options:\n"
+        printf "%-2s%-25s%-40s\n" "" "--show-tree" "Prints the generated AST to stdout."
+        printf "%-2s%-25s%-40s\n" "" "--write-tree [file]" "Writes the generated AST to the given file."
+        printf "%-2s%-25s%-40s\n" "" "--help" "Prints this help text."
+        printf "%-2s%-25s%-40s\n" "" "--files {f1, ... fn}" "Specifies the files to interpret."
+        printf "\n"

@@ -40,3 +40,11 @@ typeSpecifier = ':'
 -- | End of a statement.
 endOfStatement :: Char
 endOfStatement = ';'
+
+-- | Open parenthesis.
+openParen :: Char
+openParen = '('
+
+-- | Closed parenthesis.
+closedParen :: Char
+closedParen = ')'

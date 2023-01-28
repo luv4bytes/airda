@@ -47,7 +47,7 @@ main = do
   when (Args.showHelp parsedArgs) (Help.printHelp >> exitSuccess)
   when
     (null (Args.files parsedArgs))
-    (print "Please provide at least one filError." >> exitFailure)
+    (print "Please provide at least one file." >> exitFailure)
 
   parseTrees <- parseFiles (Args.files parsedArgs)
   case parseTrees of

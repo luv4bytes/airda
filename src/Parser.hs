@@ -120,7 +120,7 @@ parseTokens tokens fileName =
                                           endOfStatement pstate
                                             >>= \pstate ->
                                               Right
-                                                ( AST.VariableAssignment
+                                                ( AST.Assignment
                                                     (AST.Identifier (Lexer.tokenValue t))
                                                     exprNode,
                                                   pstate
@@ -298,9 +298,9 @@ treeRepr (AST.Root nodes fileName) =
             ++ treeRepr'' id (level + 2)
             ++ treeRepr'' typeId (level + 2)
             ++ treeRepr'' expr (level + 2)
-        treeRepr'' (AST.VariableAssignment id expr) level =
+        treeRepr'' (AST.Assignment id expr) level =
           replicate level '•'
-            ++ "Variable assignment\n"
+            ++ "Assignment\n"
             ++ treeRepr'' id (level + 2)
             ++ treeRepr'' expr (level + 2)
         treeRepr'' _ _ = ""
