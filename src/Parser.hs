@@ -33,9 +33,6 @@ import qualified Expression
 import qualified Lexer
 import qualified ParserState
 
--- | Defines the parser state.
-type ParserState = Lexer.TokenList
-
 -- | Parses the given tokens into a list of tree nodes.
 parseTokens :: Lexer.TokenList -> String -> Either Error.ParserException AST.TreeNode
 parseTokens [] _ = Left (Error.ParserExceptionSimple "Nothing to parse :(")
