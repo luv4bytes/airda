@@ -27,7 +27,8 @@ module AST where
 
 -- | Defines a node in a parse tree.
 data TreeNode
-  = -- | Defines the root node of a parsing tree.
+  = Epsilon
+  | -- | Defines the root node of a parsing tree.
     Root
       { nodes :: [TreeNode],
         fileName :: String
@@ -70,6 +71,14 @@ data TreeNode
   | UnaryExpression
       { operator :: TreeNode,
         expression :: TreeNode
+      }
+  | BinaryExpression
+      { lhs :: TreeNode,
+        operator :: TreeNode,
+        rhs :: TreeNode
+      }
+  | Expression
+      { expression :: TreeNode
       }
   deriving (Show, Eq)
 

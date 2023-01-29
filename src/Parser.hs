@@ -174,13 +174,13 @@ parseTokens tokens fileName =
         idNode = AST.Identifier (Lexer.tokenValue t)
 
     typeSpecifier :: ParserState.ParserState -> Either Error.ParserException ParserState.ParserState
-    typeSpecifier [] = Left (Error.ParserExceptionSimple "Expected type specifiError.")
+    typeSpecifier [] = Left (Error.ParserExceptionSimple "Expected type specifier.")
     typeSpecifier (t : ts)
       | Lexer.tokenType t == Lexer.TypeSpecifier = Right ts
       | otherwise =
           Left
             ( Error.ParserException
-                { Error.pexMessage = "Invalid token '" ++ Lexer.tokenValue t ++ "'. Expected type specifiError.",
+                { Error.pexMessage = "Invalid token '" ++ Lexer.tokenValue t ++ "'. Expected type specifier.",
                   Error.pexErrCode = Error.errInvalidToken,
                   Error.pexLineNum = Just (Lexer.tokenLineNum t),
                   Error.pexColNum = Just (Lexer.tokenColumn t),
@@ -189,13 +189,13 @@ parseTokens tokens fileName =
             )
 
     identifier :: ParserState.ParserState -> Either Error.ParserException (AST.TreeNode, ParserState.ParserState)
-    identifier [] = Left (Error.ParserExceptionSimple "Expected identifiError.")
+    identifier [] = Left (Error.ParserExceptionSimple "Expected identifier.")
     identifier (t : ts)
       | Lexer.tokenType t == Lexer.Identifier = Right (AST.Identifier (Lexer.tokenValue t), ts)
       | otherwise =
           Left
             ( Error.ParserException
-                { Error.pexMessage = "Invalid token '" ++ Lexer.tokenValue t ++ "'. Expected identifiError.",
+                { Error.pexMessage = "Invalid token '" ++ Lexer.tokenValue t ++ "'. Expected identifier.",
                   Error.pexErrCode = Error.errInvalidToken,
                   Error.pexLineNum = Just (Lexer.tokenLineNum t),
                   Error.pexColNum = Just (Lexer.tokenColumn t),
@@ -204,13 +204,13 @@ parseTokens tokens fileName =
             )
 
     typeIdentifier :: ParserState.ParserState -> Either Error.ParserException (AST.TreeNode, ParserState.ParserState)
-    typeIdentifier [] = Left (Error.ParserExceptionSimple "Expected type identifiError.")
+    typeIdentifier [] = Left (Error.ParserExceptionSimple "Expected type identifier.")
     typeIdentifier (t : ts)
       | Lexer.tokenType t == Lexer.Identifier = Right (AST.TypeIdentifier (Lexer.tokenValue t), ts)
       | otherwise =
           Left
             ( Error.ParserException
-                { Error.pexMessage = "Invalid token '" ++ Lexer.tokenValue t ++ "'. Expected type identifiError.",
+                { Error.pexMessage = "Invalid token '" ++ Lexer.tokenValue t ++ "'. Expected type identifier.",
                   Error.pexErrCode = Error.errInvalidToken,
                   Error.pexLineNum = Just (Lexer.tokenLineNum t),
                   Error.pexColNum = Just (Lexer.tokenColumn t),
@@ -302,6 +302,10 @@ treeRepr (AST.Root nodes fileName) =
           replicate level '•'
             ++ "Assignment\n"
             ++ treeRepr'' id (level + 2)
+            ++ treeRepr'' expr (level + 2)
+        treeRepr'' (AST.Expression expr) level =
+          replicate level ' '
+            ++ "Expression\n"
             ++ treeRepr'' expr (level + 2)
         treeRepr'' _ _ = ""
 treeRepr _ = ""
