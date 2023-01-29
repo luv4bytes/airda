@@ -11,18 +11,17 @@ variableDeclarationInit = identifier, typeSpecifier, typeIdentifier, assignment,
 
 assignment = "=";
 
-expression = term 
-            | expression';
+expression = unaryOperator, expressionP
+            | "(", expression, ")"
+            | expressionP;
 
-expression' = "(", term, ")"
-            | expression';
+expressionP = numericLiteral
+            | identifier
+            | expression, binaryOperator, expressionP;
 
-term = factor;
+binaryOperator = "+" | "-" | "*" | "/";
 
-factor = "-", factor'
-        | factor';
-
-factor' = numericConstant | identifier;
+unaryOperator = "-";
 
 variableDeclaration = identifier, typeSpecifier, typeIdentifier, endOfStatment;
 
@@ -36,7 +35,7 @@ identifier = unicodeChar, {(digit | unicodeChar | "_")};
 
 unicodeChar = ? unicode character ?;
 
-numericConstant = integer | decimal;
+numericLiteral = integer | decimal;
 
 integer = (["-"], digitNoNull, {digit}) | "0";
 
