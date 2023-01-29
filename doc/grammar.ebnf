@@ -17,7 +17,7 @@ expression = unaryOperator, expressionP
 
 expressionP = numericLiteral
             | identifier
-            | expression, binaryOperator, expressionP;
+            | "(", expression, ")";
 
 binaryOperator = "+" | "-" | "*" | "/";
 

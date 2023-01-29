@@ -51,6 +51,13 @@ expression state@(t : ts)
     expression' state@(t : ts)
       | Lexer.tokenType t == Lexer.NumericLiteral = Right (AST.NumericLiteral (Lexer.tokenValue t), ts)
       | Lexer.tokenType t == Lexer.Identifier = Right (AST.Identifier (Lexer.tokenValue t), ts)
+      | Lexer.tokenType t == Lexer.OpenParen =
+          case expression ts of
+            Left pe -> Left pe
+            Right (exprNode, pstate) ->
+              case closedParen pstate of
+                Left pe -> Left pe
+                Right (_, pstate) -> Right (AST.Expression exprNode, pstate)
       | otherwise =
           Left
             ( Error.ParserException
