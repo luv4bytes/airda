@@ -38,7 +38,7 @@ data TokenType
   | -- | Type specifier token.
     TypeSpecifier
   | -- | Assignment operator.
-    Assignment
+    AssignOp
   | -- | Numeric value.
     NumericLiteral
   | -- | Minus sign.
@@ -49,8 +49,6 @@ data TokenType
     Divide
   | -- | Multiply sign.
     Multiply
-  | -- | Power (exponent) operator.
-    Power
   | -- | End of statement token.
     EndOfStatement
   | -- | Open parenthesis.
@@ -89,9 +87,8 @@ tokenizeLine fileName line lineNum = tokenizeLine' lineNum 1 [] line []
       | x == Operators.plus = tokenizeLine' lineNum (colNum + 1) [] xs (tokens ++ [Token Plus [x] lineNum colNum fileName])
       | x == Operators.divide = tokenizeLine' lineNum (colNum + 1) [] xs (tokens ++ [Token Divide [x] lineNum colNum fileName])
       | x == Operators.multiply = tokenizeLine' lineNum (colNum + 1) [] xs (tokens ++ [Token Multiply [x] lineNum colNum fileName])
-      | x == Operators.pow = tokenizeLine' lineNum (colNum + 1) [] xs (tokens ++ [Token Power [x] lineNum colNum fileName])
       | x == Keywords.assignment =
-          tokenizeLine' lineNum (colNum + 1) [] xs (tokens ++ [Token Assignment [x] lineNum colNum fileName])
+          tokenizeLine' lineNum (colNum + 1) [] xs (tokens ++ [Token AssignOp [x] lineNum colNum fileName])
       | x == Keywords.typeSpecifier =
           tokenizeLine' lineNum (colNum + 1) [] xs (tokens ++ [Token TypeSpecifier [x] lineNum (colNum - length [x] + 1) fileName])
       | x == Keywords.endOfStatement =

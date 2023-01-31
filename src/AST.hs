@@ -50,8 +50,8 @@ data TreeNode
       }
   | -- | Defines an assignment for a variable.
     Assignment
-      { variableName :: TreeNode,
-        assignValue :: TreeNode
+      { lhs :: TreeNode,
+        rhs :: TreeNode
       }
   | -- | Defines a numeric literal node.
     NumericLiteral
@@ -65,7 +65,10 @@ data TreeNode
     Identifier
       { value :: String
       }
-  | UnaryOperator
+  | Operator
+      { value :: String
+      }
+  | BinaryOperator
       { value :: String
       }
   | UnaryExpression

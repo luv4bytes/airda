@@ -1,29 +1,26 @@
 program = statement, {statement};
 
-moduleDeclaration = "Mod", identifier;
+moduleDeclaration = "Mod", identifier, endOfStatment;
 
-statement = variableDeclaration
-            | variableDeclarationInit;
+statement = moduleDeclaration;
 
-variableAssignment = identifier, assignment, expression;
+assignment = identifier, assignOp, expression, endOfStatment;
 
-variableDeclarationInit = identifier, typeSpecifier, typeIdentifier, assignment, expression, endOfStatment;
-
-assignment = "=";
-
-expression = unaryOperator, expressionP
+expression = identifier
+            | numericLiteral
             | "(", expression, ")"
-            | expressionP;
+            | unaryExpression
+            | binaryExpression;
 
-expressionP = numericLiteral
-            | identifier
-            | "(", expression, ")";
+unaryExpression = unaryOp, expression;
 
-binaryOperator = "+" | "-" | "*" | "/";
+unaryOp = "-";
 
-unaryOperator = "-";
+binaryExpression = expression, binaryOp, expression;
 
-variableDeclaration = identifier, typeSpecifier, typeIdentifier, endOfStatment;
+binaryOp = "+" | "*" | "/";
+
+assignOp = "=";
 
 endOfStatment = ";";
 

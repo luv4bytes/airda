@@ -7,7 +7,7 @@ build-type:         Simple
 synopsis: The Airda programming language.
 
 -- A longer description of the package.
-description: Airda is a simple interpreted procedural programming language.
+description: Airda is a simple procedural programming language.
 
 -- The license under which the package is released.
 license:            MIT

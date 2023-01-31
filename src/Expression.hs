@@ -23,7 +23,7 @@ SOFTWARE.
 --}
 
 -- | Defines functions for parsing expressions.
-module Expression where
+module Expression (expression) where
 
 import qualified AST
 import qualified Error
@@ -32,47 +32,54 @@ import qualified ParserState
 
 expression :: ParserState.ParserState -> Either Error.ParserException (AST.TreeNode, ParserState.ParserState)
 expression [] = Left (Error.ParserExceptionSimple "Expected expression.")
-expression state@(t : ts)
-  | Lexer.tokenType t == Lexer.Minus =
-      case expression' ts of
-        Left pe -> Left pe
-        Right (exprNode, pstate) -> Right (AST.UnaryExpression (AST.UnaryOperator (Lexer.tokenValue t)) exprNode, pstate)
-  | Lexer.tokenType t == Lexer.OpenParen =
+expression [t]
+  | Lexer.tokenType t == Lexer.NumericLiteral = Right (AST.Expression (AST.NumericLiteral (Lexer.tokenValue t)), [])
+  | Lexer.tokenType t == Lexer.Identifier = Right (AST.Expression (AST.Identifier (Lexer.tokenValue t)), [])
+  | Lexer.tokenType t == Lexer.ClosedParen = Right (AST.Epsilon, [])
+  | otherwise = Right (AST.Epsilon, [t])
+expression pstate@(t : rest@(tt : ts))
+  | Lexer.tokenType t == Lexer.Identifier && Lexer.tokenType tt == Lexer.Plus =
       case expression ts of
         Left pe -> Left pe
-        Right (exprNode, pstate) ->
-          case closedParen pstate of
+        Right (rhs, state) ->
+          Right
+            ( AST.BinaryExpression
+                ( AST.Expression (AST.Identifier (Lexer.tokenValue t))
+                )
+                (AST.Operator (Lexer.tokenValue tt))
+                rhs,
+              state
+            ) -- TODO: Parenthesis in binary expressions.
+  | Lexer.tokenType t == Lexer.Identifier = Right (AST.Expression (AST.Identifier (val t)), rest)
+  | Lexer.tokenType t == Lexer.NumericLiteral = Right (AST.Expression (AST.NumericLiteral (val t)), rest)
+  | Lexer.tokenType t == Lexer.OpenParen =
+      case expression rest of
+        Left pe -> Left pe
+        Right (exprNode, state) ->
+          case closedParen state of
             Left pe -> Left pe
-            Right (_, pstate) -> Right (AST.Expression exprNode, pstate)
-  | otherwise = expression' state
+            Right state -> Right (AST.Expression exprNode, state)
+  | Lexer.tokenType t == Lexer.Minus =
+      case expression rest of
+        Left pe -> Left pe
+        Right (exprNode, state) -> Right (AST.UnaryExpression (AST.Operator (val t)) exprNode, state)
+  | otherwise =
+      Left
+        ( Error.ParserException
+            { Error.pexMessage = "Invalid expression '" ++ Lexer.tokenValue t ++ "'.",
+              Error.pexErrCode = Error.errInvalidToken,
+              Error.pexLineNum = Just (Lexer.tokenLineNum t),
+              Error.pexColNum = Just (Lexer.tokenColumn t),
+              Error.pexFileName = Lexer.fileName t
+            }
+        )
   where
-    expression' :: ParserState.ParserState -> Either Error.ParserException (AST.TreeNode, ParserState.ParserState)
-    expression' [] = Left (Error.ParserExceptionSimple "Expected expression.")
-    expression' state@(t : ts)
-      | Lexer.tokenType t == Lexer.NumericLiteral = Right (AST.NumericLiteral (Lexer.tokenValue t), ts)
-      | Lexer.tokenType t == Lexer.Identifier = Right (AST.Identifier (Lexer.tokenValue t), ts)
-      | Lexer.tokenType t == Lexer.OpenParen =
-          case expression ts of
-            Left pe -> Left pe
-            Right (exprNode, pstate) ->
-              case closedParen pstate of
-                Left pe -> Left pe
-                Right (_, pstate) -> Right (AST.Expression exprNode, pstate)
-      | otherwise =
-          Left
-            ( Error.ParserException
-                { Error.pexMessage = "Invalid token '" ++ Lexer.tokenValue t ++ "'. Expected expression.",
-                  Error.pexErrCode = Error.errInvalidToken,
-                  Error.pexLineNum = Just (Lexer.tokenLineNum t),
-                  Error.pexColNum = Just (Lexer.tokenColumn t),
-                  Error.pexFileName = Lexer.fileName t
-                }
-            )
+    val = Lexer.tokenValue
 
-    closedParen :: ParserState.ParserState -> Either Error.ParserException (AST.TreeNode, ParserState.ParserState)
+    closedParen :: ParserState.ParserState -> Either Error.ParserException ParserState.ParserState
     closedParen [] = Left (Error.ParserExceptionSimple "Expected closed parenthesis.")
-    closedParen state@(t : ts)
-      | Lexer.tokenType t == Lexer.ClosedParen = Right (AST.Epsilon, ts)
+    closedParen pstate@(t : ts)
+      | Lexer.tokenType t == Lexer.ClosedParen = Right ts
       | otherwise =
           Left
             ( Error.ParserException

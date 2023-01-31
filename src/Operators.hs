@@ -39,7 +39,3 @@ multiply = '*'
 -- | Defines the minus (-) operator.
 minus :: Char
 minus = '-'
-
--- | Defines the power (^) operator.
-pow :: Char
-pow = '^'
