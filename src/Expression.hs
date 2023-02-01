@@ -38,7 +38,7 @@ expression [t]
   | Lexer.tokenType t == Lexer.ClosedParen = Right (AST.Epsilon, [])
   | otherwise = Right (AST.Epsilon, [t])
 expression pstate@(t : rest@(tt : ts))
-  | Lexer.tokenType t == Lexer.Identifier && Lexer.tokenType tt == Lexer.Plus =
+  | Lexer.tokenType t == Lexer.Identifier && Lexer.tokenType tt `elem` Lexer.binaryOps =
       case expression ts of
         Left pe -> Left pe
         Right (rhs, state) ->
@@ -49,7 +49,19 @@ expression pstate@(t : rest@(tt : ts))
                 (AST.Operator (Lexer.tokenValue tt))
                 rhs,
               state
-            ) -- TODO: Parenthesis in binary expressions.
+            )
+  | Lexer.tokenType t == Lexer.NumericLiteral && Lexer.tokenType tt `elem` Lexer.binaryOps =
+      case expression ts of
+        Left pe -> Left pe
+        Right (rhs, state) ->
+          Right
+            ( AST.BinaryExpression
+                ( AST.Expression (AST.NumericLiteral (Lexer.tokenValue t))
+                )
+                (AST.Operator (Lexer.tokenValue tt))
+                rhs,
+              state
+            )
   | Lexer.tokenType t == Lexer.Identifier = Right (AST.Expression (AST.Identifier (val t)), rest)
   | Lexer.tokenType t == Lexer.NumericLiteral = Right (AST.Expression (AST.NumericLiteral (val t)), rest)
   | Lexer.tokenType t == Lexer.OpenParen =
@@ -58,7 +70,14 @@ expression pstate@(t : rest@(tt : ts))
         Right (exprNode, state) ->
           case closedParen state of
             Left pe -> Left pe
-            Right state -> Right (AST.Expression exprNode, state)
+            Right [] -> Right (AST.Expression exprNode, [])
+            Right pstate@(st : sts) ->
+              if Lexer.tokenType st `elem` Lexer.binaryOps
+                then case expression sts of
+                  Left pe -> Left pe
+                  Right (exnd, state) ->
+                    Right (AST.BinaryExpression (AST.Expression exprNode) (AST.Operator (Lexer.tokenValue st)) exnd, state)
+                else Right (AST.Expression exprNode, pstate)
   | Lexer.tokenType t == Lexer.Minus =
       case expression rest of
         Left pe -> Left pe

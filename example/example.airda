@@ -1,6 +1,6 @@
 Mod Example;
 
-a = ((b) + c);
+a = (a * -1) + (2 + (c / b));
 
 #a : Num = 1 + 1;
 #a = 2.0;
