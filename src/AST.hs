@@ -38,15 +38,15 @@ data TreeNode
       { modId :: TreeNode
       }
   | -- | Defines a variable declaration node in the parse tree.
-    VariableDecl
+    VarDecl
       { ident :: TreeNode,
         typeIdent :: TreeNode
       }
-  | -- | Defines a variable declaration with initialization.
-    VariableInit
+  | -- | Defines a variable declaration with following initialization in the parse tree.
+    VarInit
       { ident :: TreeNode,
         typeIdent :: TreeNode,
-        initValue :: TreeNode
+        expression :: TreeNode
       }
   | -- | Defines an assignment for a variable.
     Assignment

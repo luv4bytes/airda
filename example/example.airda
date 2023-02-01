@@ -1,6 +1,10 @@
-Mod Example;
+Mod Main;
 
-a = (a * -1) + (2 + (c / b));
+c : Num;
+c = 1;
 
-#a : Num = 1 + 1;
-#a = 2.0;
+b : Num;
+b = 2;
+
+a : Num = 1 + 1;
+a = 1 + -b * (2 / 1);

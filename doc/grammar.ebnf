@@ -4,6 +4,8 @@ moduleDeclaration = "Mod", identifier, endOfStatment;
 
 statement = moduleDeclaration;
 
+variableDeclaration = identifier, typeSpecifier, typeIdentifier, [assignOp, expression], endOfStatment;
+
 assignment = identifier, assignOp, expression, endOfStatment;
 
 expression = identifier

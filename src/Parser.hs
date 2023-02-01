@@ -70,6 +70,10 @@ parseTokens tokens fileName =
           case assignment tokens of
             Left pe -> Left pe
             Right (assignNode, pstate) -> statements pstate (nodes ++ [assignNode])
+      | Lexer.tokenType t == Lexer.Identifier && Lexer.tokenType tt == Lexer.TypeSpecifier =
+          case variableDeclaration tokens of
+            Left pe -> Left pe
+            Right (varNode, pstate) -> statements pstate (nodes ++ [varNode])
       | otherwise =
           Left
             ( Error.ParserException
@@ -103,9 +107,34 @@ parseTokens tokens fileName =
                 }
             )
 
+    variableDeclaration :: ParserState.ParserState -> Either Error.ParserException (AST.TreeNode, ParserState.ParserState)
+    variableDeclaration [] = Left (Error.ParserExceptionSimple "Expected variable declaration.")
+    variableDeclaration pstate@(t : ts) =
+      case identifier pstate of
+        Left pe -> Left pe
+        Right (idNode, state) ->
+          case typeSpecifier state of
+            Left pe -> Left pe
+            Right state ->
+              case typeIdentifier state of
+                Left pe -> Left pe
+                Right (typeId, state) ->
+                  case assignOp state of
+                    Left pe ->
+                      case endOfStatement state of
+                        Left pe' -> Left pe'
+                        Right state -> Right (AST.VarDecl idNode typeId, state)
+                    Right state ->
+                      case Expression.expression state of
+                        Left pe -> Left pe
+                        Right (exprNode, state) ->
+                          case endOfStatement state of
+                            Left pe -> Left pe
+                            Right state -> Right (AST.VarInit idNode typeId exprNode, state)
+
     assignment :: ParserState.ParserState -> Either Error.ParserException (AST.TreeNode, ParserState.ParserState)
     assignment [] = Left (Error.ParserExceptionSimple "Expected assignment.")
-    assignment pstate@(t : ts) =
+    assignment pstate =
       case identifier pstate of
         Left pe -> Left pe
         Right (idNode, state) ->
@@ -149,6 +178,36 @@ parseTokens tokens fileName =
                 }
             )
 
+    typeIdentifier :: ParserState.ParserState -> Either Error.ParserException (AST.TreeNode, ParserState.ParserState)
+    typeIdentifier [] = Left (Error.ParserExceptionSimple "Expected type identifier.")
+    typeIdentifier (t : ts)
+      | Lexer.tokenType t == Lexer.Identifier = Right (AST.TypeIdentifier (Lexer.tokenValue t), ts)
+      | otherwise =
+          Left
+            ( Error.ParserException
+                { Error.pexMessage = "Invalid token '" ++ Lexer.tokenValue t ++ "'. Expected type identifier.",
+                  Error.pexErrCode = Error.errInvalidToken,
+                  Error.pexLineNum = Just (Lexer.tokenLineNum t),
+                  Error.pexColNum = Just (Lexer.tokenColumn t),
+                  Error.pexFileName = Lexer.fileName t
+                }
+            )
+
+    typeSpecifier :: ParserState.ParserState -> Either Error.ParserException ParserState.ParserState
+    typeSpecifier [] = Left (Error.ParserExceptionSimple "Expected type specifier.")
+    typeSpecifier (t : ts)
+      | Lexer.tokenType t == Lexer.TypeSpecifier = Right ts
+      | otherwise =
+          Left
+            ( Error.ParserException
+                { Error.pexMessage = "Invalid token '" ++ Lexer.tokenValue t ++ "'. Expected identifier.",
+                  Error.pexErrCode = Error.errInvalidToken,
+                  Error.pexLineNum = Just (Lexer.tokenLineNum t),
+                  Error.pexColNum = Just (Lexer.tokenColumn t),
+                  Error.pexFileName = Lexer.fileName t
+                }
+            )
+
     endOfStatement :: ParserState.ParserState -> Either Error.ParserException ParserState.ParserState
     endOfStatement [] = Left (Error.ParserExceptionSimple "Expected end of statement.")
     endOfStatement (t : ts)
@@ -178,7 +237,7 @@ treeRepr (AST.Root nodes fileName) =
         treeRepr'' :: AST.TreeNode -> Int -> String
         treeRepr'' (AST.ModuleDecl id) level =
           replicate level '└'
-            ++ "Module\n"
+            ++ "Mod\n"
             ++ treeRepr'' id (level + 2)
         treeRepr'' (AST.Identifier value) level =
           replicate level ' '
@@ -187,47 +246,47 @@ treeRepr (AST.Root nodes fileName) =
             ++ "\n"
         treeRepr'' (AST.NumericLiteral value) level =
           replicate level ' '
-            ++ "Numeric literal: "
+            ++ "Num: "
             ++ value
             ++ "\n"
         treeRepr'' (AST.Assignment id expr) level =
           replicate level '└'
-            ++ "Assignment\n"
+            ++ "Assng\n"
             ++ treeRepr'' id (level + 2)
             ++ treeRepr'' expr (level + 2)
         treeRepr'' (AST.Expression expr) level =
           replicate level ' '
-            ++ "Expression\n"
+            ++ "Expr\n"
             ++ treeRepr'' expr (level + 2)
         treeRepr'' (AST.TypeIdentifier value) level =
           replicate level ' '
-            ++ "Type Id: "
+            ++ "T_Id: "
             ++ value
             ++ "\n"
         treeRepr'' (AST.UnaryExpression op expr) level =
           replicate level ' '
-            ++ "Unary expression\n"
+            ++ "UnExpr\n"
             ++ treeRepr'' op (level + 2)
             ++ treeRepr'' expr (level + 2)
         treeRepr'' (AST.BinaryExpression lhs op rhs) level =
           replicate level ' '
-            ++ "Binary expression\n"
+            ++ "BinExpr\n"
             ++ treeRepr'' lhs (level + 2)
             ++ treeRepr'' op (level + 2)
             ++ treeRepr'' rhs (level + 2)
         treeRepr'' (AST.Operator value) level =
           replicate level ' '
-            ++ "Operator: "
+            ++ "Op: "
             ++ value
             ++ "\n"
-        treeRepr'' (AST.VariableDecl id typeId) level =
+        treeRepr'' (AST.VarDecl id typeId) level =
           replicate level '•'
-            ++ "Variable declaration\n"
+            ++ "VarDecl\n"
             ++ treeRepr'' id (level + 2)
             ++ treeRepr'' typeId (level + 2)
-        treeRepr'' (AST.VariableInit id typeId expr) level =
+        treeRepr'' (AST.VarInit id typeId expr) level =
           replicate level '•'
-            ++ "Variable initialization\n"
+            ++ "VarInit\n"
             ++ treeRepr'' id (level + 2)
             ++ treeRepr'' typeId (level + 2)
             ++ treeRepr'' expr (level + 2)

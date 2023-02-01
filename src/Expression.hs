@@ -28,6 +28,7 @@ module Expression (expression) where
 import qualified AST
 import qualified Error
 import qualified Lexer
+import qualified Operators
 import qualified ParserState
 
 expression :: ParserState.ParserState -> Either Error.ParserException (AST.TreeNode, ParserState.ParserState)
@@ -38,7 +39,7 @@ expression [t]
   | Lexer.tokenType t == Lexer.ClosedParen = Right (AST.Epsilon, [])
   | otherwise = Right (AST.Epsilon, [t])
 expression pstate@(t : rest@(tt : ts))
-  | Lexer.tokenType t == Lexer.Identifier && Lexer.tokenType tt `elem` Lexer.binaryOps =
+  | Lexer.tokenType t == Lexer.Identifier && isBinOp tt =
       case expression ts of
         Left pe -> Left pe
         Right (rhs, state) ->
@@ -50,7 +51,19 @@ expression pstate@(t : rest@(tt : ts))
                 rhs,
               state
             )
-  | Lexer.tokenType t == Lexer.NumericLiteral && Lexer.tokenType tt `elem` Lexer.binaryOps =
+  | Lexer.tokenType t == Lexer.Identifier && Lexer.tokenType tt == Lexer.Minus =
+      case expression ts of
+        Left pe -> Left pe
+        Right (rhs, state) ->
+          Right
+            ( AST.BinaryExpression
+                ( AST.Expression (AST.Identifier (Lexer.tokenValue t))
+                )
+                (AST.Operator [Operators.plus])
+                (AST.UnaryExpression (AST.Operator (Lexer.tokenValue tt)) rhs),
+              state
+            )
+  | Lexer.tokenType t == Lexer.NumericLiteral && isBinOp tt =
       case expression ts of
         Left pe -> Left pe
         Right (rhs, state) ->
@@ -60,6 +73,18 @@ expression pstate@(t : rest@(tt : ts))
                 )
                 (AST.Operator (Lexer.tokenValue tt))
                 rhs,
+              state
+            )
+  | Lexer.tokenType t == Lexer.NumericLiteral && Lexer.tokenType tt == Lexer.Minus =
+      case expression ts of
+        Left pe -> Left pe
+        Right (rhs, state) ->
+          Right
+            ( AST.BinaryExpression
+                ( AST.Expression (AST.NumericLiteral (Lexer.tokenValue t))
+                )
+                (AST.Operator [Operators.plus])
+                (AST.UnaryExpression (AST.Operator (Lexer.tokenValue tt)) rhs),
               state
             )
   | Lexer.tokenType t == Lexer.Identifier = Right (AST.Expression (AST.Identifier (val t)), rest)
@@ -72,7 +97,7 @@ expression pstate@(t : rest@(tt : ts))
             Left pe -> Left pe
             Right [] -> Right (AST.Expression exprNode, [])
             Right pstate@(st : sts) ->
-              if Lexer.tokenType st `elem` Lexer.binaryOps
+              if isBinOp st
                 then case expression sts of
                   Left pe -> Left pe
                   Right (exnd, state) ->
@@ -94,6 +119,7 @@ expression pstate@(t : rest@(tt : ts))
         )
   where
     val = Lexer.tokenValue
+    isBinOp t = Lexer.tokenType t `elem` Lexer.binaryOps
 
     closedParen :: ParserState.ParserState -> Either Error.ParserException ParserState.ParserState
     closedParen [] = Left (Error.ParserExceptionSimple "Expected closed parenthesis.")
