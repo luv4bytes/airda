@@ -280,12 +280,12 @@ treeRepr (AST.Root nodes fileName) =
             ++ value
             ++ "\n"
         treeRepr'' (AST.VarDecl id typeId) level =
-          replicate level '•'
+          replicate level '└'
             ++ "VarDecl\n"
             ++ treeRepr'' id (level + 2)
             ++ treeRepr'' typeId (level + 2)
         treeRepr'' (AST.VarInit id typeId expr) level =
-          replicate level '•'
+          replicate level '└'
             ++ "VarInit\n"
             ++ treeRepr'' id (level + 2)
             ++ treeRepr'' typeId (level + 2)
