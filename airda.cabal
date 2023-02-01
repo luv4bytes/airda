@@ -30,11 +30,10 @@ executable airda
 
 library libairda
     exposed-modules:  Lexer,
-                      Parser, 
+                      Parser,
                       AST,
                       ParserState,
-                      Error, 
-                      Expression, 
+                      Error,                        
                       Operators,
                       Keywords
 

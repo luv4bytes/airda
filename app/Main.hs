@@ -112,6 +112,6 @@ parseFiles files = parseFiles' files [] 1
     parseFiles' (f : fs) nodes index =
       do
         tokens <- readFileTokens f
-        case Parser.parseTokens tokens f of
+        case Parser.parse tokens f of
           Left pe -> return (Left pe)
           Right tn -> parseFiles' fs (nodes ++ [tn]) (index + 1)

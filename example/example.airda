@@ -1,5 +1,1 @@
-Mod Main;
-
-a : Int;
-b : Num = 2;
-c : Num = -a + 2 * -1;
+1 + 1

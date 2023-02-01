@@ -1,34 +1,14 @@
-program = statement, {statement};
+program = {stmt};
 
-moduleDeclaration = "Mod", identifier, endOfStatment;
+stmt = vardcl;
 
-statement = moduleDeclaration;
+vardcl = id, tspec, id, eos;
 
-variableDeclaration = identifier, typeSpecifier, typeIdentifier, [assignOp, expression], endOfStatment;
+eos = ";";
 
-assignment = identifier, assignOp, expression, endOfStatment;
+tspec = ":";
 
-expression = identifier
-            | numericLiteral
-            | "(", expression, ")"
-            | unaryExpression
-            | binaryExpression;
-
-unaryExpression = "-", expression;
-
-binaryExpression = expression, binaryOp, expression;
-
-binaryOp = "+" | "-" | "*" | "/";
-
-assignOp = "=";
-
-endOfStatment = ";";
-
-typeSpecifier = ":";
-
-typeIdentifier = identifier;
-
-identifier = unicodeChar, {(digit | unicodeChar | "_")};
+id = unicodeChar, {(digit | unicodeChar | "_")};
 
 unicodeChar = ? unicode character ?;
 
