@@ -66,10 +66,8 @@ data TreeNode
       { value :: String
       }
   | Operator
-      { value :: String
-      }
-  | BinaryOperator
-      { value :: String
+      { value :: String,
+        precedence :: Int
       }
   | UnaryExpression
       { operator :: TreeNode,

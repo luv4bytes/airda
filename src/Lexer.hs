@@ -59,9 +59,6 @@ data TokenType
     Unknown
   deriving (Show, Eq)
 
-binaryOps :: [TokenType]
-binaryOps = [Plus, Multiply, Divide]
-
 -- | Defines a token found during lexical analysis.
 data Token = Token
   { tokenType :: TokenType,

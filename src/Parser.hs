@@ -223,8 +223,6 @@ parseTokens tokens fileName =
                 }
             )
 
-{-- ├ └ ─  │ --}
-
 -- | Returns a string representation of a parse AST.
 treeRepr :: AST.TreeNode -> String
 treeRepr (AST.Root nodes fileName) =
@@ -238,57 +236,81 @@ treeRepr (AST.Root nodes fileName) =
         treeRepr'' (AST.ModuleDecl id) level =
           replicate level '└'
             ++ "Mod\n"
-            ++ treeRepr'' id (level + 2)
-        treeRepr'' (AST.Identifier value) level =
-          replicate level ' '
-            ++ "Id: "
-            ++ value
-            ++ "\n"
-        treeRepr'' (AST.NumericLiteral value) level =
-          replicate level ' '
-            ++ "Num: "
-            ++ value
-            ++ "\n"
+            ++ replicate level ' '
+            ++ "└─"
+            ++ treeRepr'' id level
         treeRepr'' (AST.Assignment id expr) level =
           replicate level '└'
             ++ "Assng\n"
-            ++ treeRepr'' id (level + 2)
-            ++ treeRepr'' expr (level + 2)
-        treeRepr'' (AST.Expression expr) level =
-          replicate level ' '
-            ++ "Expr\n"
-            ++ treeRepr'' expr (level + 2)
-        treeRepr'' (AST.TypeIdentifier value) level =
-          replicate level ' '
-            ++ "T_Id: "
-            ++ value
-            ++ "\n"
-        treeRepr'' (AST.UnaryExpression op expr) level =
-          replicate level ' '
-            ++ "UnExpr\n"
-            ++ treeRepr'' op (level + 2)
-            ++ treeRepr'' expr (level + 2)
-        treeRepr'' (AST.BinaryExpression lhs op rhs) level =
-          replicate level ' '
-            ++ "BinExpr\n"
-            ++ treeRepr'' lhs (level + 2)
-            ++ treeRepr'' op (level + 2)
-            ++ treeRepr'' rhs (level + 2)
-        treeRepr'' (AST.Operator value) level =
-          replicate level ' '
-            ++ "Op: "
-            ++ value
-            ++ "\n"
+            ++ replicate level ' '
+            ++ "└─"
+            ++ treeRepr'' id level
+            ++ replicate level ' '
+            ++ "└─"
+            ++ treeRepr'' expr level
         treeRepr'' (AST.VarDecl id typeId) level =
           replicate level '└'
             ++ "VarDecl\n"
-            ++ treeRepr'' id (level + 2)
-            ++ treeRepr'' typeId (level + 2)
+            ++ replicate level ' '
+            ++ "└─"
+            ++ treeRepr'' id level
+            ++ replicate level ' '
+            ++ "└─"
+            ++ treeRepr'' typeId level
         treeRepr'' (AST.VarInit id typeId expr) level =
           replicate level '└'
             ++ "VarInit\n"
+            ++ replicate (level + 2) ' '
+            ++ "└─"
             ++ treeRepr'' id (level + 2)
+            ++ replicate (level + 2) ' '
+            ++ "└─"
             ++ treeRepr'' typeId (level + 2)
+            ++ replicate (level + 2) ' '
+            ++ "└─"
             ++ treeRepr'' expr (level + 2)
+        treeRepr'' (AST.Identifier value) level =
+          "Id: "
+            ++ value
+            ++ "\n"
+        treeRepr'' (AST.NumericLiteral value) level =
+          "Num: "
+            ++ value
+            ++ "\n"
+        treeRepr'' (AST.TypeIdentifier value) level =
+          "T_Id: "
+            ++ value
+            ++ "\n"
+        treeRepr'' (AST.Operator value prec) level =
+          "Op: "
+            ++ value
+            ++ " ("
+            ++ show prec
+            ++ ")"
+            ++ "\n"
+        treeRepr'' (AST.Expression expr) level =
+          "Expr\n"
+            ++ replicate (level + 2) ' '
+            ++ "└─"
+            ++ treeRepr'' expr (level + 2)
+        treeRepr'' (AST.UnaryExpression op expr) level =
+          "UnExpr\n"
+            ++ replicate (level + 2) ' '
+            ++ "└─"
+            ++ treeRepr'' op (level + 2)
+            ++ replicate (level + 2) ' '
+            ++ "└─"
+            ++ treeRepr'' expr (level + 2)
+        treeRepr'' (AST.BinaryExpression lhs op rhs) level =
+          "BinExpr\n"
+            ++ replicate (level + 2) ' '
+            ++ "└─"
+            ++ treeRepr'' lhs (level + 2)
+            ++ replicate (level + 2) ' '
+            ++ "└─"
+            ++ treeRepr'' op (level + 2)
+            ++ replicate (level + 2) ' '
+            ++ "└─"
+            ++ treeRepr'' rhs (level + 2)
         treeRepr'' _ _ = ""
 treeRepr _ = ""

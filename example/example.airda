@@ -1,9 +1,5 @@
 Mod Main;
 
-c : Num;
-c = 1;
-
-b : Num;
-b = 2;
-
-a : Num = a + 1;
+a : Int;
+b : Num = 2;
+c : Num = -a + 2 * -1;

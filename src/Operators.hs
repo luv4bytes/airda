@@ -24,18 +24,49 @@ SOFTWARE.
 
 module Operators where
 
+import Data.Maybe (fromMaybe)
+
 -- | Defines the plus (+) operator.
 plus :: Char
 plus = '+'
+
+-- | Defines the plus (+) operator as a string.
+sPlus :: String
+sPlus = "+"
 
 -- | Defines the divide (/) operator.
 divide :: Char
 divide = '/'
 
+-- | Defines the divide (/) operator as a string.
+sDivide :: String
+sDivide = "/"
+
 -- | Defines the multiply (*) operator.
 multiply :: Char
 multiply = '*'
 
+-- | Defines the multiply (*) operator as a string.
+sMultiply :: String
+sMultiply = "*"
+
 -- | Defines the minus (-) operator.
 minus :: Char
 minus = '-'
+
+-- | Defines the minus (-) operator as a string.
+sMinus :: String
+sMinus = "-"
+
+-- | Defines binary operators.
+binaryOps :: [String]
+binaryOps = [sPlus, sMinus, sDivide, sMultiply]
+
+-- | Defines operator precedences in a lookup table.
+operatorPrecedence :: [(String, Int)]
+operatorPrecedence = [(sPlus, 1), (sMinus, 1), (sMultiply, 2), (sDivide, 2)]
+
+-- | Function for retrieving the precedence of an operator.
+-- In case no operator is found, -1 is returned.
+opPrec :: String -> Int
+opPrec op = fromMaybe (-1) (lookup op Operators.operatorPrecedence)

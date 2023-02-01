@@ -14,13 +14,11 @@ expression = identifier
             | unaryExpression
             | binaryExpression;
 
-unaryExpression = unaryOp, expression;
-
-unaryOp = "-";
+unaryExpression = "-", expression;
 
 binaryExpression = expression, binaryOp, expression;
 
-binaryOp = "+" | "*" | "/";
+binaryOp = "+" | "-" | "*" | "/";
 
 assignOp = "=";
 
