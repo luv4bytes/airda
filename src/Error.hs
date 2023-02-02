@@ -50,3 +50,6 @@ data ParserException
       { pexMessage :: String
       }
   deriving (Show, Eq)
+
+syntaxError :: ParserException
+syntaxError = ParserExceptionSimple "Syntax error."
