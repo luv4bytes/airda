@@ -46,13 +46,13 @@ main = do
 
   when (Args.showHelp parsedArgs) (Help.printHelp >> exitSuccess)
   when
-    (null (Args.files parsedArgs))
+    (null (Args.file parsedArgs))
     (print "Please provide at least one file." >> exitFailure)
 
-  parseTrees <- parseFiles (Args.files parsedArgs)
-  case parseTrees of
+  parseTree <- parseFile (Args.file parsedArgs)
+  case parseTree of
     Left pe -> print pe
-    Right trees ->
+    Right tree ->
       do
         treeFileExists <- doesFileExist treeFile
         when
@@ -63,30 +63,26 @@ main = do
               >> ( do
                      now <- getZonedTime
                      appendFile treeFile (show now ++ "\n\n")
-                     writeTrees trees
+                     writeTree tree
                  )
           )
-        when (Args.showParseTree parsedArgs) (showTrees trees)
+        when (Args.showParseTree parsedArgs) (showTree tree)
       where
         treeFile = Args.parseTreeFile parsedArgs
 
-        writeTrees :: AST.NodeList -> IO ()
-        writeTrees [] = return ()
-        writeTrees (root@(AST.Root nodes fileName) : ts) =
+        writeTree :: AST.TreeNode -> IO ()
+        writeTree root@(AST.Root _ _) =
           let repr = Parser.treeRepr root
            in do
                 appendFile treeFile repr
-                writeTrees ts
-        writeTrees (_ : ts) = writeTrees ts
+        writeTree _ = return ()
 
-        showTrees :: AST.NodeList -> IO ()
-        showTrees [] = return ()
-        showTrees (root@(AST.Root nodes fileName) : ts) =
+        showTree :: AST.TreeNode -> IO ()
+        showTree root@(AST.Root _ _) =
           let repr = Parser.treeRepr root
            in do
                 putStr repr
-                showTrees ts
-        showTrees (_ : ts) = showTrees ts
+        showTree _ = return ()
 
 readFileTokens :: String -> IO Lexer.TokenList
 readFileTokens fileName =
@@ -104,14 +100,9 @@ readTokens fileName fileLines = readTokens' fileLines 1
     readTokens' (x : xs) lineNum =
       Lexer.tokenizeLine fileName x lineNum ++ readTokens' xs (lineNum + 1)
 
-parseFiles :: [String] -> IO (Either Error.ParserException AST.NodeList)
-parseFiles files = parseFiles' files [] 1
-  where
-    parseFiles' :: [String] -> AST.NodeList -> Int -> IO (Either Error.ParserException AST.NodeList)
-    parseFiles' [] nodes _ = return (Right nodes)
-    parseFiles' (f : fs) nodes index =
-      do
-        tokens <- readFileTokens f
-        case Parser.parse tokens f of
-          Left pe -> return (Left pe)
-          Right tn -> parseFiles' fs (nodes ++ [tn]) (index + 1)
+parseFile :: String -> IO (Either Error.ParserException AST.TreeNode)
+parseFile file = do
+  tokens <- readFileTokens file
+  case Parser.parse tokens file of
+    Left pe -> return (Left pe)
+    Right tn -> return (Right tn)

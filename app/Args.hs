@@ -35,8 +35,8 @@ data Arguments = Arguments
     parseTreeFile :: String,
     -- | Shows the airda help.
     showHelp :: Bool,
-    -- | List of files to compile.
-    files :: [String]
+    -- | Program file
+    file :: String
   }
   deriving (Show)
 
@@ -52,10 +52,6 @@ writeParseTreeArg = "--write-tree"
 showHelpArg :: String
 showHelpArg = "--help"
 
--- | Argument for following list of files to compile.
-filesArg :: String
-filesArg = "--files"
-
 -- | Parses the given arguments and returns parsed arguments or nothing.
 parseArgs :: [String] -> Arguments
 parseArgs [] = Arguments False False "" False []
@@ -66,11 +62,9 @@ parseArgs args = parseArgs' args (Arguments False False "" False [])
     parseArgs' [a] arg@(Arguments showParseTree writeParseTree parseTreeFile showHelp files)
       | a == showParseTreeArg = arg {showParseTree = True}
       | a == showHelpArg = arg {showHelp = True}
-      | otherwise = arg
+      | otherwise = arg {file = a}
     parseArgs' (a : rest@(aa : as)) arg@(Arguments showParseTree writeParseTree parseTreeFile showHelp files)
       | a == showParseTreeArg = parseArgs' rest arg {showParseTree = True}
       | a == showHelpArg = parseArgs' rest arg {showHelp = True}
-      | a == filesArg = arg {files = rest}
-      | a == writeParseTreeArg =
-          parseArgs' as arg {writeParseTree = True, parseTreeFile = aa}
+      | a == writeParseTreeArg = parseArgs' as arg {writeParseTree = True, parseTreeFile = aa}
       | otherwise = parseArgs' rest arg

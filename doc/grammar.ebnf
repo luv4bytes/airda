@@ -1,18 +1,25 @@
 program = {stmt};
 
-stmt = vardcl;
+stmt = vardcl
+      | assgn;
 
 vardcl = id, tspec, id, eos;
+
+assgn = id, assgnOp, expr;
+
+expr = id | num;
 
 eos = ";";
 
 tspec = ":";
 
+assgnOp = "=";
+
 id = unicodeChar, {(digit | unicodeChar | "_")};
 
 unicodeChar = ? unicode character ?;
 
-numericLiteral = integer | decimal;
+num = integer | decimal;
 
 integer = (["-"], digitNoNull, {digit}) | "0";
 
