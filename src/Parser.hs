@@ -211,7 +211,8 @@ parse tokens fileName = program tokens >>= \nodes -> Right (AST.Root nodes fileN
     expression :: ParserState.ParserState -> Either Error.ParserException (AST.TreeNode, ParserState.ParserState)
     expression [] = Left (Error.ParserExceptionSimple "Syntax error.")
     expression [t]
-      | tt t == Lexer.Identifier = Right (idexpr, [])
+      | tt t == Lexer.Identifier = Right (idExpr t, [])
+      | tt t == Lexer.NumericLiteral = Right (numExpr t, [])
       | otherwise =
           Left
             ( Error.ParserException
@@ -223,12 +224,12 @@ parse tokens fileName = program tokens >>= \nodes -> Right (AST.Root nodes fileN
                 }
             )
       where
-        idexpr = AST.Expression (AST.Identifier (tv t))
-        tv = Lexer.tokenValue
         tt = Lexer.tokenType
     expression state@(t : r@(_t : ts))
-      | tt t == Lexer.Identifier && tt _t == Lexer.Plus = addExpr ts plusOp idexpr
-      | tt t == Lexer.Identifier = Right (idexpr, r)
+      | tt t == Lexer.Identifier && tt _t == Lexer.Plus = addExpr ts (op _t) (idExpr t)
+      | tt t == Lexer.Identifier = Right (idExpr t, r)
+      | tt t == Lexer.NumericLiteral && tt _t == Lexer.Plus = addExpr ts (op _t) (numExpr t)
+      | tt t == Lexer.NumericLiteral = Right (numExpr t, r)
       | otherwise =
           Left
             ( Error.ParserException
@@ -240,9 +241,6 @@ parse tokens fileName = program tokens >>= \nodes -> Right (AST.Root nodes fileN
                 }
             )
       where
-        idexpr = AST.Expression (AST.Identifier (tv t))
-        plusOp = AST.Operator (tv _t)
-
         tv = Lexer.tokenValue
         tt = Lexer.tokenType
 
@@ -250,7 +248,8 @@ parse tokens fileName = program tokens >>= \nodes -> Right (AST.Root nodes fileN
         addExpr :: ParserState.ParserState -> AST.TreeNode -> AST.TreeNode -> Either Error.ParserException (AST.TreeNode, ParserState.ParserState)
         addExpr [] _ _ = Left (Error.ParserExceptionSimple "Syntax error.")
         addExpr [t] op lhs
-          | tt t == Lexer.Identifier = Right (AST.BinaryExpression lhs op idexpr, [])
+          | tt t == Lexer.Identifier = Right (AST.BinaryExpression lhs op (idExpr t), [])
+          | tt t == Lexer.NumericLiteral = Right (AST.BinaryExpression lhs op (numExpr t), [])
           | otherwise =
               Left
                 ( Error.ParserException
@@ -261,14 +260,17 @@ parse tokens fileName = program tokens >>= \nodes -> Right (AST.Root nodes fileN
                       Error.pexFileName = Lexer.fileName t
                     }
                 )
-          where
-            idexpr = AST.Expression (AST.Identifier (tv t))
-        addExpr state@(t : r@(_t : ts)) op lhs
+        addExpr state@(t : r@(_t : ts)) binOp lhs
           | tt t == Lexer.Identifier && tt _t == Lexer.Plus =
-              case addExpr ts plusOp (AST.BinaryExpression lhs op idexpr) of
+              case addExpr ts (op _t) (AST.BinaryExpression lhs binOp (idExpr t)) of
                 Left pe -> Left pe
                 Right (e, s) -> Right (e, s)
-          | tt t == Lexer.Identifier = Right (AST.BinaryExpression lhs op idexpr, r)
+          | tt t == Lexer.Identifier = Right (AST.BinaryExpression lhs binOp (idExpr t), r)
+          | tt t == Lexer.NumericLiteral && tt _t == Lexer.Plus =
+              case addExpr ts (op _t) (AST.BinaryExpression lhs binOp (numExpr t)) of
+                Left pe -> Left pe
+                Right (e, s) -> Right (e, s)
+          | tt t == Lexer.NumericLiteral = Right (AST.BinaryExpression lhs binOp (numExpr t), r)
           | otherwise =
               Left
                 ( Error.ParserException
@@ -279,9 +281,15 @@ parse tokens fileName = program tokens >>= \nodes -> Right (AST.Root nodes fileN
                       Error.pexFileName = Lexer.fileName t
                     }
                 )
-          where
-            idexpr = AST.Expression (AST.Identifier (tv t))
-            plusOp = AST.Operator (tv _t)
+
+idExpr :: Lexer.Token -> AST.TreeNode
+idExpr t = AST.Expression (AST.Identifier (Lexer.tokenValue t))
+
+numExpr :: Lexer.Token -> AST.TreeNode
+numExpr t = AST.Expression (AST.NumericLiteral (Lexer.tokenValue t))
+
+op :: Lexer.Token -> AST.TreeNode
+op t = AST.Operator (Lexer.tokenValue t)
 
 -- | Returns a string representation of a parse AST.
 treeRepr :: AST.TreeNode -> String
