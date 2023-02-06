@@ -3,11 +3,20 @@ program = {stmt};
 stmt = vardcl
       | assgn;
 
+moddecl = "Mod", id, eos;
+
 vardcl = id, tspec, id, eos;
 
-assgn = id, assgnOp, expr;
+assgn = id, assgnOp, expr, eos;
 
-expr = id | num;
+expr = id 
+      | num
+      | "(", expr, ")"
+      | unaOp, expr
+      | expr, binOp, expr;
+
+unaOp = "-";
+binOp = "+" | "-" | "*" | "/";
 
 eos = ";";
 

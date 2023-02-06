@@ -31,6 +31,7 @@ executable airda
 library libairda
     exposed-modules:  Lexer,
                       Parser,
+                      Expression,
                       AST,
                       ParserState,
                       Error,                        
@@ -45,5 +46,5 @@ library libairda
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
     build-depends:    base ^>=4.15.1.0
-    hs-source-dirs:   src
+    hs-source-dirs:   src src/parser
     default-language: Haskell2010
