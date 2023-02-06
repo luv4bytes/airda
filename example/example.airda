@@ -3,4 +3,4 @@ Mod main;
 i : Num;
 a : Num;
 
-a = -1;
+a = (1 + 1) * 2;
