@@ -1,6 +1,14 @@
 Mod main;
 
-i : Num;
-a : Num;
+a : Int;
+a = b + c + d + e;
 
-a = (1 + 1) * 2;
+# fun f (x : Int, y : Int)
+# {
+#     lop i ..10
+#     {
+#         x = x + y;
+#     }
+
+#     x * 2 + 1;
+# }
