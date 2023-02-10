@@ -27,7 +27,7 @@ module Lexer where
 
 import Data.Char (isAlpha, isAlphaNum, isDigit, isSpace)
 import qualified Keywords
-import qualified Operators
+import qualified Primitives
 
 -- | Defines different types of tokens found during lexical analysis.
 data TokenType
@@ -83,10 +83,10 @@ tokenizeLine fileName line lineNum = tokenizeLine' lineNum 1 [] line []
           getIdentifier (stack ++ [x]) lineNum colNum xs tokens
       | isDigit x = getNumeric (stack ++ [x]) lineNum colNum xs tokens
       | x == '#' = tokenizeLine' lineNum (colNum + 1) stack [] tokens -- Comment. Whole line is not analyzed.
-      | x == Operators.minus = tokenizeLine' lineNum (colNum + 1) [] xs (tokens ++ [Token Minus [x] lineNum colNum fileName])
-      | x == Operators.plus = tokenizeLine' lineNum (colNum + 1) [] xs (tokens ++ [Token Plus [x] lineNum colNum fileName])
-      | x == Operators.divide = tokenizeLine' lineNum (colNum + 1) [] xs (tokens ++ [Token Divide [x] lineNum colNum fileName])
-      | x == Operators.multiply = tokenizeLine' lineNum (colNum + 1) [] xs (tokens ++ [Token Multiply [x] lineNum colNum fileName])
+      | x == Primitives.minus = tokenizeLine' lineNum (colNum + 1) [] xs (tokens ++ [Token Minus [x] lineNum colNum fileName])
+      | x == Primitives.plus = tokenizeLine' lineNum (colNum + 1) [] xs (tokens ++ [Token Plus [x] lineNum colNum fileName])
+      | x == Primitives.divide = tokenizeLine' lineNum (colNum + 1) [] xs (tokens ++ [Token Divide [x] lineNum colNum fileName])
+      | x == Primitives.multiply = tokenizeLine' lineNum (colNum + 1) [] xs (tokens ++ [Token Multiply [x] lineNum colNum fileName])
       | x == Keywords.assignment =
           tokenizeLine' lineNum (colNum + 1) [] xs (tokens ++ [Token AssignOp [x] lineNum colNum fileName])
       | x == Keywords.typeSpecifier =

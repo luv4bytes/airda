@@ -25,13 +25,45 @@ SOFTWARE.
 module Primitives where
 
 -- | Defines the keyword for the primitive 'Num' (Numeric) type.
-numeric :: String
-numeric = "Num"
+typeNumeric :: String
+typeNumeric = "Num"
 
 -- | Defines the keyword for the primitive 'Int' (Integer) type.
-integer :: String
-integer = "Int"
+typeInteger :: String
+typeInteger = "Int"
 
 -- | Defines the keyword for the primitive 'Dec' (Decimal) type.
-decimal :: String
-decimal = "Dec"
+typeDecimal :: String
+typeDecimal = "Dec"
+
+-- | Defines the plus (+) operator.
+plus :: Char
+plus = '+'
+
+-- | Defines the plus (+) operator as a string.
+sPlus :: String
+sPlus = "+"
+
+-- | Defines the divide (/) operator.
+divide :: Char
+divide = '/'
+
+-- | Defines the divide (/) operator as a string.
+sDivide :: String
+sDivide = "/"
+
+-- | Defines the multiply (*) operator.
+multiply :: Char
+multiply = '*'
+
+-- | Defines the multiply (*) operator as a string.
+sMultiply :: String
+sMultiply = "*"
+
+-- | Defines the minus (-) operator.
+minus :: Char
+minus = '-'
+
+-- | Defines the minus (-) operator as a string.
+sMinus :: String
+sMinus = "-"

@@ -35,8 +35,8 @@ library libairda
                       AST,
                       ParserState,
                       Error,                        
-                      Operators,
-                      Keywords
+                      Keywords,
+                      Primitives
 
     -- Modules included in this library but not exported.
     other-modules:

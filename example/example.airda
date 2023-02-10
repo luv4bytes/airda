@@ -1,7 +1,7 @@
 Mod main;
 
 a : Int;
-a = 1 * (2 * 3 * (4 * 5)) * 6;
+a = c * (d + f) + 3 * (2 + 2) * g;
 
 
 # fun f (x : Int, y : Int)
