@@ -53,20 +53,10 @@ expression state@(token@(Lexer.Token {Lexer.tokenType = Lexer.NumericLiteral}) :
 expression state@(token@(Lexer.Token {Lexer.tokenType = Lexer.NumericLiteral}) : (next@(Lexer.Token {Lexer.tokenType = Lexer.Minus}) : ts)) = addExpr ts (op next) (numExpr token)
 expression state@(token@(Lexer.Token {Lexer.tokenType = Lexer.NumericLiteral}) : ts) = Right (numExpr token, ts)
 expression state@((Lexer.Token {Lexer.tokenType = Lexer.OpenParen}) : ts) =
-  case expression ts of
+  case parenExpr ts of
     Left pe -> Left pe
-    Right (expr, state) ->
-      case closedParen state of
-        Left pe -> Left pe
-        Right [] -> Left Error.syntaxError
-        Right (st@Lexer.Token {Lexer.tokenType = Lexer.Plus} : sts) -> addExpr sts (op st) (AST.Expression expr)
-        Right (st@Lexer.Token {Lexer.tokenType = Lexer.Minus} : sts) -> addExpr sts (op st) (AST.Expression expr)
-        Right state -> Right (AST.Expression expr, state)
-expression state@(token@(Lexer.Token {Lexer.tokenType = Lexer.Minus}) : rest@(next@(Lexer.Token {Lexer.tokenType = Lexer.OpenParen}) : ts)) =
-  case expression rest of
-    Left pe -> Left pe
-    Right (e, st@Lexer.Token {Lexer.tokenType = Lexer.Plus} : sts) -> addExpr sts (op st) (AST.UnaryExpression (op token) (AST.Expression e))
-    Right (e, st@Lexer.Token {Lexer.tokenType = Lexer.Minus} : sts) -> addExpr sts (op st) (AST.UnaryExpression (op token) (AST.Expression e))
+    Right (e, t@(Lexer.Token {Lexer.tokenType = Lexer.Plus}) : ts) -> addExpr ts (op t) e
+    Right (e, t@(Lexer.Token {Lexer.tokenType = Lexer.Minus}) : ts) -> addExpr ts (op t) e
     Right res -> Right res
 expression state@(t : _) =
   Left
@@ -78,6 +68,16 @@ expression state@(t : _) =
           Error.pexFileName = Lexer.fileName t
         }
     )
+
+-- | Parenthesised expression.
+parenExpr :: ParserState.ParserState -> Either Error.ParserException (AST.TreeNode, ParserState.ParserState)
+parenExpr state =
+  case expression state of
+    Left pe -> Left pe
+    Right (e, s) ->
+      case closedParen s of
+        Left pe -> Left pe
+        Right tos -> Right (AST.Expression e, tos)
 
 -- | Additive Expression
 addExpr :: ParserState.ParserState -> AST.TreeNode -> AST.TreeNode -> Either Error.ParserException (AST.TreeNode, ParserState.ParserState)
@@ -97,8 +97,10 @@ addExpr [t] op lhs =
 addExpr state@(t : r@(_t : ts)) binOp lhs
   | tt t == Lexer.Identifier && isAddOp _t = addExpr ts (op _t) (AST.BinaryExpression lhs binOp (idExpr t))
   | tt t == Lexer.OpenParen =
-      case expression state of
+      case parenExpr r of
         Left pe -> Left pe
+        Right (e, st@token@(Lexer.Token {Lexer.tokenType = Lexer.Plus}) : sts) -> addExpr sts (op st) (AST.BinaryExpression lhs binOp e)
+        Right (e, st@token@(Lexer.Token {Lexer.tokenType = Lexer.Minus}) : sts) -> addExpr sts (op st) (AST.BinaryExpression lhs binOp e)
         Right (e, s) -> Right (AST.BinaryExpression lhs binOp e, s)
   | tt t == Lexer.Identifier = Right (AST.BinaryExpression lhs binOp (idExpr t), r)
   | otherwise =
