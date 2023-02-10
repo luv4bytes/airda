@@ -1,7 +1,7 @@
 Mod main;
 
 a : Int;
-a = (b + c + (e - f));
+a = (1 + 2 + (3 - 4)) + 5;
 
 
 # fun f (x : Int, y : Int)
