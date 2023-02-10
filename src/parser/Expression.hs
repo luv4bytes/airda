@@ -30,7 +30,6 @@ import qualified Error
 import qualified Lexer
 import qualified ParserState
 
--- TODO: Precedence
 -- TOOD: Unary expressions
 
 expression :: ParserState.ParserState -> Either Error.ParserException (AST.TreeNode, ParserState.ParserState)
@@ -64,14 +63,11 @@ expression state@((Lexer.Token {Lexer.tokenType = Lexer.OpenParen}) : ts) =
         Right (st@Lexer.Token {Lexer.tokenType = Lexer.Minus} : sts) -> addExpr sts (op st) (AST.Expression expr)
         Right state -> Right (AST.Expression expr, state)
 expression state@(token@(Lexer.Token {Lexer.tokenType = Lexer.Minus}) : rest@(next@(Lexer.Token {Lexer.tokenType = Lexer.OpenParen}) : ts)) =
-  case expression ts of
+  case expression rest of
     Left pe -> Left pe
-    Right (e, s) ->
-      case closedParen s of
-        Left pe -> Left pe
-        Right (st@Lexer.Token {Lexer.tokenType = Lexer.Plus} : sts) -> addExpr sts (op st) (AST.UnaryExpression (op token) (AST.Expression e))
-        Right (st@Lexer.Token {Lexer.tokenType = Lexer.Minus} : sts) -> addExpr sts (op st) (AST.UnaryExpression (op token) (AST.Expression e))
-        Right state -> Right (e, s)
+    Right (e, st@Lexer.Token {Lexer.tokenType = Lexer.Plus} : sts) -> addExpr sts (op st) (AST.UnaryExpression (op token) (AST.Expression e))
+    Right (e, st@Lexer.Token {Lexer.tokenType = Lexer.Minus} : sts) -> addExpr sts (op st) (AST.UnaryExpression (op token) (AST.Expression e))
+    Right res -> Right res
 expression state@(t : _) =
   Left
     ( Error.ParserException
@@ -100,42 +96,15 @@ addExpr [t] op lhs =
     )
 addExpr state@(t : r@(_t : ts)) binOp lhs
   | tt t == Lexer.Identifier && isAddOp _t = addExpr ts (op _t) (AST.BinaryExpression lhs binOp (idExpr t))
-  | tt t == Lexer.Identifier && isMultOp _t = multExpr ts (op _t) (idExpr t) >>= \(e, s) -> Right (AST.BinaryExpression lhs binOp e, s)
+  | tt t == Lexer.OpenParen =
+      case expression state of
+        Left pe -> Left pe
+        Right (e, s) -> Right (AST.BinaryExpression lhs binOp e, s)
   | tt t == Lexer.Identifier = Right (AST.BinaryExpression lhs binOp (idExpr t), r)
   | otherwise =
       Left
         ( Error.ParserException
             { Error.pexMessage = "Invalid additive expression '" ++ Lexer.tokenValue t ++ "'.",
-              Error.pexErrCode = Error.errInvalidToken,
-              Error.pexLineNum = Just (Lexer.tokenLineNum t),
-              Error.pexColNum = Just (Lexer.tokenColumn t),
-              Error.pexFileName = Lexer.fileName t
-            }
-        )
-
--- | Multiplicative Expression
-multExpr :: ParserState.ParserState -> AST.TreeNode -> AST.TreeNode -> Either Error.ParserException (AST.TreeNode, ParserState.ParserState)
-multExpr [] _ _ = Left Error.syntaxError
-multExpr [t] op lhs
-  | tt t == Lexer.Identifier = Right (AST.BinaryExpression lhs op (idExpr t), [])
-  | otherwise =
-      Left
-        ( Error.ParserException
-            { Error.pexMessage = "Invalid multiplicative expression '" ++ Lexer.tokenValue t ++ "'.",
-              Error.pexErrCode = Error.errInvalidToken,
-              Error.pexLineNum = Just (Lexer.tokenLineNum t),
-              Error.pexColNum = Just (Lexer.tokenColumn t),
-              Error.pexFileName = Lexer.fileName t
-            }
-        )
-multExpr state@(t : r@(_t : ts)) binOp lhs
-  | tt t == Lexer.Identifier && isMultOp _t = multExpr ts (op _t) (AST.BinaryExpression lhs binOp (idExpr t))
-  | tt t == Lexer.Identifier && isAddOp _t = Left {} -- TODO: What to do?
-  | tt t == Lexer.Identifier = Right (AST.BinaryExpression lhs binOp (idExpr t), r)
-  | otherwise =
-      Left
-        ( Error.ParserException
-            { Error.pexMessage = "Invalid multiplicative expression '" ++ Lexer.tokenValue t ++ "'.",
               Error.pexErrCode = Error.errInvalidToken,
               Error.pexLineNum = Just (Lexer.tokenLineNum t),
               Error.pexColNum = Just (Lexer.tokenColumn t),
@@ -159,10 +128,10 @@ closedParen (t : ts)
         )
 
 idExpr :: Lexer.Token -> AST.TreeNode
-idExpr t = AST.Expression (AST.Identifier (Lexer.tokenValue t))
+idExpr t = AST.Identifier (Lexer.tokenValue t)
 
 numExpr :: Lexer.Token -> AST.TreeNode
-numExpr t = AST.Expression (AST.NumericLiteral (Lexer.tokenValue t))
+numExpr t = AST.NumericLiteral (Lexer.tokenValue t)
 
 op :: Lexer.Token -> AST.TreeNode
 op t = AST.Operator (Lexer.tokenValue t)
