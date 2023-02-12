@@ -49,6 +49,8 @@ data TokenType
     Divide
   | -- | Multiply sign.
     Multiply
+  | -- | Power operator.
+    Power
   | -- | End of statement token.
     EndOfStatement
   | -- | Open parenthesis.
@@ -87,6 +89,7 @@ tokenizeLine fileName line lineNum = tokenizeLine' lineNum 1 [] line []
       | x == Primitives.plus = tokenizeLine' lineNum (colNum + 1) [] xs (tokens ++ [Token Plus [x] lineNum colNum fileName])
       | x == Primitives.divide = tokenizeLine' lineNum (colNum + 1) [] xs (tokens ++ [Token Divide [x] lineNum colNum fileName])
       | x == Primitives.multiply = tokenizeLine' lineNum (colNum + 1) [] xs (tokens ++ [Token Multiply [x] lineNum colNum fileName])
+      | x == Primitives.power = tokenizeLine' lineNum (colNum + 1) [] xs (tokens ++ [Token Power [x] lineNum colNum fileName])
       | x == Keywords.assignment =
           tokenizeLine' lineNum (colNum + 1) [] xs (tokens ++ [Token AssignOp [x] lineNum colNum fileName])
       | x == Keywords.typeSpecifier =

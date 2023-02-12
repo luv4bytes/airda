@@ -42,7 +42,7 @@ plus = '+'
 
 -- | Defines the plus (+) operator as a string.
 sPlus :: String
-sPlus = "+"
+sPlus = [plus]
 
 -- | Defines the divide (/) operator.
 divide :: Char
@@ -50,7 +50,7 @@ divide = '/'
 
 -- | Defines the divide (/) operator as a string.
 sDivide :: String
-sDivide = "/"
+sDivide = [divide]
 
 -- | Defines the multiply (*) operator.
 multiply :: Char
@@ -58,7 +58,7 @@ multiply = '*'
 
 -- | Defines the multiply (*) operator as a string.
 sMultiply :: String
-sMultiply = "*"
+sMultiply = [multiply]
 
 -- | Defines the minus (-) operator.
 minus :: Char
@@ -66,4 +66,12 @@ minus = '-'
 
 -- | Defines the minus (-) operator as a string.
 sMinus :: String
-sMinus = "-"
+sMinus = [minus]
+
+-- | Defines the power (^) operator.
+power :: Char
+power = '^'
+
+-- | Defines the power (^) operator as a string.
+sPower :: [Char]
+sPower = [power]

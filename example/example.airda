@@ -1,7 +1,8 @@
 Mod main;
 
-a : Int;
-a = c * (d + f) + 3 * (2 + 2) * g;
+res : Int;
+#res = a + b^(c + d);
+res = 2^3 * (2 * 4^5 * 6);
 
 
 # fun f (x : Int, y : Int)
