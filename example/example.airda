@@ -1,7 +1,7 @@
 res : Int;
 
-res = a^(1^c + 2)^d;
-
+#res = a^(1^c + 2)^d * (1^2^3)^5;
+res = 1^2^3 + (4^5)^6 * 2;
 # fun f (x : Int, y : Int)
 # {
 #     lop i ..10
