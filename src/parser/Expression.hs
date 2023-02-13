@@ -31,7 +31,8 @@ import qualified Lexer
 import qualified ParserState
 import qualified Primitives
 
--- TODO: Unary expressions
+-- TODO: Patterns for Power
+-- TODO: Unary expressions inside addExpr, multExpr and exponExpr
 
 expression :: ParserState.ParserState -> Either Error.ParserException (AST.TreeNode, ParserState.ParserState)
 expression [] = Left Error.syntaxError
@@ -72,6 +73,14 @@ expression state@((Lexer.Token {Lexer.tokenType = Lexer.OpenParen}) : ts) =
     Right (e, t@(Lexer.Token {Lexer.tokenType = Lexer.Multiply}) : ts) -> multExpr ts (op t) e
     Right (e, t@(Lexer.Token {Lexer.tokenType = Lexer.Divide}) : ts) -> multExpr ts (op t) e
     Right res -> Right res
+expression state@(t@(Lexer.Token {Lexer.tokenType = Lexer.Minus}) : ts) =
+  case unarExpr ts (op t) of
+    Left pe -> Left pe
+    Right (e, t@(Lexer.Token {Lexer.tokenType = Lexer.Plus}) : ts) -> addExpr ts (op t) e
+    Right (e, t@(Lexer.Token {Lexer.tokenType = Lexer.Minus}) : ts) -> addExpr ts (op t) e
+    Right (e, t@(Lexer.Token {Lexer.tokenType = Lexer.Multiply}) : ts) -> multExpr ts (op t) e
+    Right (e, t@(Lexer.Token {Lexer.tokenType = Lexer.Divide}) : ts) -> multExpr ts (op t) e
+    Right res -> Right res
 expression state@(t : _) = invalidExpr t
 
 -- | Exponantiation.
@@ -80,22 +89,55 @@ exponExpr [] _ = Left Error.syntaxError
 exponExpr [token@(Lexer.Token {Lexer.tokenType = Lexer.Identifier})] lhs = Right (AST.BinaryExpression lhs (AST.Operator Primitives.sPower) (idExpr token), [])
 exponExpr [token@(Lexer.Token {Lexer.tokenType = Lexer.NumericLiteral})] lhs = Right (AST.BinaryExpression lhs (AST.Operator Primitives.sPower) (numExpr token), [])
 exponExpr [t] lhs = invalidExponExpr t
+exponExpr state@(t@(Lexer.Token {Lexer.tokenType = Lexer.Identifier}) : r@(_t@(Lexer.Token {Lexer.tokenType = Lexer.Power}) : ts)) lhs =
+  case exponExpr ts (idExpr t) of
+    Left pe -> Left pe
+    Right (e, s) -> Right (AST.BinaryExpression lhs (op _t) e, s)
+exponExpr state@(t@(Lexer.Token {Lexer.tokenType = Lexer.NumericLiteral}) : r@(_t@(Lexer.Token {Lexer.tokenType = Lexer.Power}) : ts)) lhs =
+  case exponExpr ts (numExpr t) of
+    Left pe -> Left pe
+    Right (e, s) -> Right (AST.BinaryExpression lhs (op _t) e, s)
 exponExpr state@(t : r@(_t : ts)) lhs
   | tt t == Lexer.Identifier = Right (idResExpr, r)
   | tt t == Lexer.NumericLiteral = Right (numResExpr, r)
   | tt t == Lexer.OpenParen =
       case parenExpr r of
         Left pe -> Left pe
-        Right (e, st@token@(Lexer.Token {Lexer.tokenType = Lexer.Plus}) : sts) -> addExpr sts (op st) (parenResExpr e)
-        Right (e, st@token@(Lexer.Token {Lexer.tokenType = Lexer.Minus}) : sts) -> addExpr sts (op st) (parenResExpr e)
-        Right (e, st@token@(Lexer.Token {Lexer.tokenType = Lexer.Multiply}) : sts) -> multExpr sts (op st) (parenResExpr e)
-        Right (e, st@token@(Lexer.Token {Lexer.tokenType = Lexer.Divide}) : sts) -> multExpr sts (op st) (parenResExpr e)
+        Right (e, st@(Lexer.Token {Lexer.tokenType = Lexer.Plus}) : sts) -> addExpr sts (op st) (parenResExpr e)
+        Right (e, st@(Lexer.Token {Lexer.tokenType = Lexer.Minus}) : sts) -> addExpr sts (op st) (parenResExpr e)
+        Right (e, st@(Lexer.Token {Lexer.tokenType = Lexer.Multiply}) : sts) -> multExpr sts (op st) (parenResExpr e)
+        Right (e, st@(Lexer.Token {Lexer.tokenType = Lexer.Divide}) : sts) -> multExpr sts (op st) (parenResExpr e)
+        Right (e, st@(Lexer.Token {Lexer.tokenType = Lexer.Power}) : sts) ->
+          case exponExpr sts e of
+            Left pe -> Left pe
+            Right (e, s) -> Right (AST.BinaryExpression lhs (op st) e, s)
         Right (e, s) -> Right (AST.BinaryExpression lhs (AST.Operator Primitives.sPower) e, s)
   | otherwise = invalidExponExpr t
   where
     parenResExpr = AST.BinaryExpression lhs (AST.Operator Primitives.sPower)
     idResExpr = AST.BinaryExpression lhs (AST.Operator Primitives.sPower) (idExpr t)
     numResExpr = AST.BinaryExpression lhs (AST.Operator Primitives.sPower) (numExpr t)
+
+-- | Unary expression.
+unarExpr :: ParserState.ParserState -> AST.TreeNode -> Either Error.ParserException (AST.TreeNode, ParserState.ParserState)
+unarExpr [] _ = Left Error.syntaxError
+unarExpr [token@(Lexer.Token {Lexer.tokenType = Lexer.Identifier})] _op = Right (AST.UnaryExpression _op (idExpr token), [])
+unarExpr [token@(Lexer.Token {Lexer.tokenType = Lexer.NumericLiteral})] _op = Right (AST.UnaryExpression _op (numExpr token), [])
+unarExpr [t] op = invalidUnarExpr t
+unarExpr state@(t : r@(_t : ts)) _op
+  | tt t == Lexer.Identifier = Right (resExpr (idExpr t), r)
+  | tt t == Lexer.NumericLiteral = Right (resExpr (idExpr t), r)
+  | tt t == Lexer.OpenParen =
+      case parenExpr r of
+        Left pe -> Left pe
+        Right (e, st@token@(Lexer.Token {Lexer.tokenType = Lexer.Plus}) : sts) -> addExpr sts (op st) (resExpr e)
+        Right (e, st@token@(Lexer.Token {Lexer.tokenType = Lexer.Minus}) : sts) -> addExpr sts (op st) (resExpr e)
+        Right (e, st@token@(Lexer.Token {Lexer.tokenType = Lexer.Multiply}) : sts) -> multExpr sts (op st) (resExpr e)
+        Right (e, st@token@(Lexer.Token {Lexer.tokenType = Lexer.Divide}) : sts) -> multExpr sts (op st) (resExpr e)
+        Right (e, s) -> Right (resExpr e, s)
+  | otherwise = invalidUnarExpr t
+  where
+    resExpr = AST.UnaryExpression _op
 
 -- | Parenthesised expression.
 parenExpr :: ParserState.ParserState -> Either Error.ParserException (AST.TreeNode, ParserState.ParserState)
@@ -119,28 +161,28 @@ addExpr state@(t : r@(_t : ts)) binOp lhs
   | tt t == Lexer.Identifier && isExpOp _t =
       case exponExpr ts (idExpr t) of
         Left pe -> Left pe
-        Right (e, st@token@(Lexer.Token {Lexer.tokenType = Lexer.Plus}) : sts) -> addExpr sts (op st) (AST.BinaryExpression lhs binOp e)
-        Right (e, st@token@(Lexer.Token {Lexer.tokenType = Lexer.Minus}) : sts) -> addExpr sts (op st) (AST.BinaryExpression lhs binOp e)
-        Right (e, st@token@(Lexer.Token {Lexer.tokenType = Lexer.Multiply}) : sts) -> multExpr sts (op st) e >>= \(e, s) -> Right (AST.BinaryExpression lhs binOp e, s)
-        Right (e, st@token@(Lexer.Token {Lexer.tokenType = Lexer.Divide}) : sts) -> multExpr sts (op st) e >>= \(e, s) -> Right (AST.BinaryExpression lhs binOp e, s)
+        Right (e, st@(Lexer.Token {Lexer.tokenType = Lexer.Plus}) : sts) -> addExpr sts (op st) (AST.BinaryExpression lhs binOp e)
+        Right (e, st@(Lexer.Token {Lexer.tokenType = Lexer.Minus}) : sts) -> addExpr sts (op st) (AST.BinaryExpression lhs binOp e)
+        Right (e, st@(Lexer.Token {Lexer.tokenType = Lexer.Multiply}) : sts) -> multExpr sts (op st) e >>= \(e, s) -> Right (AST.BinaryExpression lhs binOp e, s)
+        Right (e, st@(Lexer.Token {Lexer.tokenType = Lexer.Divide}) : sts) -> multExpr sts (op st) e >>= \(e, s) -> Right (AST.BinaryExpression lhs binOp e, s)
         Right (e, s) -> Right (AST.BinaryExpression lhs binOp e, s)
   | tt t == Lexer.NumericLiteral && isAddOp _t = addExpr ts (op _t) (AST.BinaryExpression lhs binOp (numExpr t))
   | tt t == Lexer.NumericLiteral && isMultOp _t = multExpr ts (op _t) (numExpr t) >>= \(e, s) -> Right (AST.BinaryExpression lhs binOp e, s)
   | tt t == Lexer.NumericLiteral && isExpOp _t =
       case exponExpr ts (numExpr t) of
         Left pe -> Left pe
-        Right (e, st@token@(Lexer.Token {Lexer.tokenType = Lexer.Plus}) : sts) -> addExpr sts (op st) (AST.BinaryExpression lhs binOp e)
-        Right (e, st@token@(Lexer.Token {Lexer.tokenType = Lexer.Minus}) : sts) -> addExpr sts (op st) (AST.BinaryExpression lhs binOp e)
-        Right (e, st@token@(Lexer.Token {Lexer.tokenType = Lexer.Multiply}) : sts) -> multExpr sts (op st) e >>= \(e, s) -> Right (AST.BinaryExpression lhs binOp e, s)
-        Right (e, st@token@(Lexer.Token {Lexer.tokenType = Lexer.Divide}) : sts) -> multExpr sts (op st) e >>= \(e, s) -> Right (AST.BinaryExpression lhs binOp e, s)
+        Right (e, st@(Lexer.Token {Lexer.tokenType = Lexer.Plus}) : sts) -> addExpr sts (op st) (AST.BinaryExpression lhs binOp e)
+        Right (e, st@(Lexer.Token {Lexer.tokenType = Lexer.Minus}) : sts) -> addExpr sts (op st) (AST.BinaryExpression lhs binOp e)
+        Right (e, st@(Lexer.Token {Lexer.tokenType = Lexer.Multiply}) : sts) -> multExpr sts (op st) e >>= \(e, s) -> Right (AST.BinaryExpression lhs binOp e, s)
+        Right (e, st@(Lexer.Token {Lexer.tokenType = Lexer.Divide}) : sts) -> multExpr sts (op st) e >>= \(e, s) -> Right (AST.BinaryExpression lhs binOp e, s)
         Right (e, s) -> Right (AST.BinaryExpression lhs binOp e, s)
   | tt t == Lexer.OpenParen =
       case parenExpr r of
         Left pe -> Left pe
-        Right (e, st@token@(Lexer.Token {Lexer.tokenType = Lexer.Plus}) : sts) -> addExpr sts (op st) (AST.BinaryExpression lhs binOp e)
-        Right (e, st@token@(Lexer.Token {Lexer.tokenType = Lexer.Minus}) : sts) -> addExpr sts (op st) (AST.BinaryExpression lhs binOp e)
-        Right (e, st@token@(Lexer.Token {Lexer.tokenType = Lexer.Multiply}) : sts) -> multExpr sts (op st) e >>= \(e, s) -> Right (AST.BinaryExpression lhs binOp e, s)
-        Right (e, st@token@(Lexer.Token {Lexer.tokenType = Lexer.Divide}) : sts) -> multExpr sts (op st) e >>= \(e, s) -> Right (AST.BinaryExpression lhs binOp e, s)
+        Right (e, st@(Lexer.Token {Lexer.tokenType = Lexer.Plus}) : sts) -> addExpr sts (op st) (AST.BinaryExpression lhs binOp e)
+        Right (e, st@(Lexer.Token {Lexer.tokenType = Lexer.Minus}) : sts) -> addExpr sts (op st) (AST.BinaryExpression lhs binOp e)
+        Right (e, st@(Lexer.Token {Lexer.tokenType = Lexer.Multiply}) : sts) -> multExpr sts (op st) e >>= \(e, s) -> Right (AST.BinaryExpression lhs binOp e, s)
+        Right (e, st@(Lexer.Token {Lexer.tokenType = Lexer.Divide}) : sts) -> multExpr sts (op st) e >>= \(e, s) -> Right (AST.BinaryExpression lhs binOp e, s)
         Right (e, s) -> Right (AST.BinaryExpression lhs binOp e, s)
   | tt t == Lexer.Identifier = Right (AST.BinaryExpression lhs binOp (idExpr t), r)
   | tt t == Lexer.NumericLiteral = Right (AST.BinaryExpression lhs binOp (numExpr t), r)
@@ -265,6 +307,18 @@ invalidExponExpr token =
   Left
     ( Error.ParserException
         { Error.pexMessage = "Invalid exponantiation '" ++ Lexer.tokenValue token ++ "'.",
+          Error.pexErrCode = Error.errInvalidExpression,
+          Error.pexLineNum = Just (Lexer.tokenLineNum token),
+          Error.pexColNum = Just (Lexer.tokenColumn token),
+          Error.pexFileName = Lexer.fileName token
+        }
+    )
+
+invalidUnarExpr :: Lexer.Token -> Either Error.ParserException b
+invalidUnarExpr token =
+  Left
+    ( Error.ParserException
+        { Error.pexMessage = "Invalid unary expression '" ++ Lexer.tokenValue token ++ "'.",
           Error.pexErrCode = Error.errInvalidExpression,
           Error.pexLineNum = Just (Lexer.tokenLineNum token),
           Error.pexColNum = Just (Lexer.tokenColumn token),

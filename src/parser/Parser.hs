@@ -93,10 +93,6 @@ statements tokens@(t : rest@(tt : ts)) nodes
       case assign tokens of
         Left pe -> Left pe
         Right (aNode, state) -> statements state (nodes ++ [aNode])
-  | Lexer.tokenType t == Lexer.Module =
-      case moddecl tokens of
-        Left pe -> Left pe
-        Right (modecl, state) -> statements state (nodes ++ [modecl])
   | otherwise =
       Left
         ( Error.ParserException
@@ -137,33 +133,6 @@ assign state =
               case endOfStatement state of
                 Left pe -> Left pe
                 Right state -> Right (AST.Assignment idNode expr, state)
-
-moddecl :: ParserState.ParserState -> Either Error.ParserException (AST.TreeNode, ParserState.ParserState)
-moddecl state =
-  case modKw state of
-    Left pe -> Left pe
-    Right state ->
-      case identifier state of
-        Left pe -> Left pe
-        Right (idNode, state) ->
-          case endOfStatement state of
-            Left pe -> Left pe
-            Right state -> Right (AST.ModuleDecl idNode, state)
-
-modKw :: ParserState.ParserState -> Either Error.ParserException ParserState.ParserState
-modKw [] = Left Error.syntaxError
-modKw (t : ts)
-  | Lexer.tokenType t == Lexer.Module = Right ts
-  | otherwise =
-      Left
-        ( Error.ParserException
-            { Error.pexMessage = "Invalid token '" ++ Lexer.tokenValue t ++ "'. Expected 'Mod'.",
-              Error.pexErrCode = Error.errInvalidToken,
-              Error.pexLineNum = Just (Lexer.tokenLineNum t),
-              Error.pexColNum = Just (Lexer.tokenColumn t),
-              Error.pexFileName = Lexer.fileName t
-            }
-        )
 
 identifier :: ParserState.ParserState -> Either Error.ParserException (AST.TreeNode, ParserState.ParserState)
 identifier [] = Left Error.syntaxError

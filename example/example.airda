@@ -1,9 +1,6 @@
-Mod main;
-
 res : Int;
-#res = a + b^(c + d);
-res = 2^3 * (2 * 4^5 * 6);
 
+res = a^(1^c + 2)^d;
 
 # fun f (x : Int, y : Int)
 # {
